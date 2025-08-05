@@ -1,5 +1,5 @@
 use cnxns::db::schema::CREATE_TABLES_SQL;
-use cnxns::scrape::fixtures::get_new_fixtures;
+use cnxns::scrape::scraping::get_new_fixtures;
 use dotenv::dotenv;
 use postgres::{Client, NoTls};
 use std::env;
