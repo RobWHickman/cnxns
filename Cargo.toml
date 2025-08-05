@@ -1,0 +1,13 @@
+[package]
+name = "cnxns"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+scraper = "0.18"
+reqwest = { version = "0.11", features = ["blocking"] }
+toml = "0.8"
+serde = { version = "1.0", features = ["derive"] }
+dotenv = "0.15"
+postgres = { version = "0.19", features = ["with-chrono-0_4"] }
+chrono = "0.4.41"
