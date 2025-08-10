@@ -72,11 +72,17 @@ fn request_match_players(
     match_id: &str,
 ) -> Result<Value, Box<dyn std::error::Error>> {
     println!("Making API request for match: {}", match_id);
-    let response = api_client
+    let response = match api_client
         .get("https://fbrapi.com/all-players-match-stats")
         .header("X-API-Key", api_key)
         .query(&[("match_id", match_id)])
-        .send()?;
+        .send() {
+        Ok(resp) => resp,
+        Err(e) => {
+            println!("HTTP request failed for match {}: {}", match_id, e);
+            return Err(format!("HTTP request failed for match {}: {}", match_id, e).into());
+        }
+    };
 
     println!("Got response with status: {}", response.status());
     if !response.status().is_success() {
