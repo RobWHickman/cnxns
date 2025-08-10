@@ -1,0 +1,30 @@
+pub const CHECK_SCRAPING_COUNTS: &str = r#"
+WITH scraped_matches AS (
+    SELECT 
+        count(*) as original_count,
+        count(*) / 3 as count_divided_by_3,
+        count(*) % 3 = 0 as is_integer_division,
+        m.match_id
+    FROM matches m 
+    JOIN player_stats ps
+        ON ps.match_id = m.match_id 
+    GROUP BY m.match_id
+)
+UPDATE connections.public.matches 
+SET data_count = 1
+FROM scraped_matches sm
+WHERE matches.match_id = sm.match_id
+  AND sm.original_count > 0 
+  AND sm.is_integer_division = true;
+
+UPDATE connections.public.league_seasons ls
+SET data_count = matches_summary.matches_with_data
+FROM (
+    SELECT m.league_id, m.season_id, COUNT(DISTINCT m.match_id) as matches_with_data
+    FROM connections.public.matches m
+    WHERE m.data_count = 1
+    GROUP BY m.league_id, m.season_id
+) matches_summary
+WHERE ls.league_id = matches_summary.league_id
+  AND ls.season_id = matches_summary.season_id;
+"#;

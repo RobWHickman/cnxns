@@ -1,29 +1,41 @@
 [fbref_ids]
 base_url = "https://fbref.com/en/"
 league_selector_nodes = "td[data-stat='match_report'] a"
+FULL_SEASON_IDS = [
+    # "1992-1993",
+    # "1993-1994",
+    # "1994-1995",
+    # "1995-1996",
+    "1996-1997",
+    "1997-1998",
+]
 
 
 [[fbref_ids.leagues]]
 league_name = "Premier-League"
 league_id = 9
-season_ids = [
-    "1995-1996",
-    "1996-1997",
-    "1997-1998",
-]
+season_ids = ["FULL"]
 
-[[fbref_ids.leagues]]
-league_name = "La-Liga"
-league_id = 12
-season_ids = [
-    "1995-1996",
-    "1996-1997",
-    "1997-1998",
-]
+# [[fbref_ids.leagues]]
+# league_name = "La-Liga"
+# league_id = 12
+# season_ids = ["FULL"]
+
+# [[fbref_ids.leagues]]
+# league_name = "Bundesliga"
+# league_id = 20
+# season_ids = [
+#     "1992-1993",
+#     "1993-1994"
+# ]
+
 
 [scraping_config]
 rate_limit_seconds = 1
 max_retries = 3
+
+[fbref_api]
+rate_limit_ms = 6100
 
 [db_connection]
 db_connection = "local"
