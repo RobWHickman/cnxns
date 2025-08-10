@@ -34,10 +34,12 @@ pub fn get_match_stats(
             "Requesting match: https://fbref.com/en/matches/{}",
             match_info.match_id
         );
-        let match_data = request_match_players(&api_client, &api_key, &match_info.match_id)?;
+        let match_data = request_match_players(&api_client, &api_key, &match_info.match_id)
+            .map_err(|e| format!("Failed to request match {}: {}", match_info.match_id, e))?;
         println!("Got data for match: {}", match_info.match_id);
 
-        process_match_data(&match_data, &match_info, db_client)?;
+        process_match_data(&match_data, &match_info, db_client)
+            .map_err(|e| format!("Failed to process match {}: {}", match_info.match_id, e))?;
         println!("Processed match: {}", match_info.match_id);
     }
     Ok(())
