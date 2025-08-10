@@ -1,1 +1,2 @@
-pub mod server.rs;
+pub mod html;
+pub mod server;
