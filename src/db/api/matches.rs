@@ -71,17 +71,21 @@ fn request_match_players(
     api_key: &str,
     match_id: &str,
 ) -> Result<Value, Box<dyn std::error::Error>> {
+    println!("Making API request for match: {}", match_id);
     let response = api_client
         .get("https://fbrapi.com/all-players-match-stats")
         .header("X-API-Key", api_key)
         .query(&[("match_id", match_id)])
         .send()?;
 
+    println!("Got response with status: {}", response.status());
     if !response.status().is_success() {
         return Err(format!("API request failed with status: {}", response.status()).into());
     }
 
+    println!("Parsing JSON response...");
     let json: Value = response.json()?;
+    println!("Successfully parsed JSON for match: {}", match_id);
     Ok(json)
 }
 
