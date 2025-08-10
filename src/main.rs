@@ -29,8 +29,11 @@ fn fill_db(config: toml::Value) -> Result<(), Box<dyn std::error::Error>> {
     db_client.batch_execute(CREATE_TABLES_SQL).unwrap();
     db_client.batch_execute(CHECK_SCRAPING_COUNTS).unwrap();
 
+    println!("Starting fixtures...");
     get_leagues_fixtures(&mut db_client, &config)?;
+    println!("Fixtures complete, starting match stats...");
     get_match_stats(&mut db_client, &config)?;
+    println!("Match stats complete");
 
     Ok(())
 }
