@@ -76,7 +76,8 @@ fn request_match_players(
         .get("https://fbrapi.com/all-players-match-stats")
         .header("X-API-Key", api_key)
         .query(&[("match_id", match_id)])
-        .send() {
+        .send()
+    {
         Ok(resp) => resp,
         Err(e) => {
             println!("HTTP request failed for match {}: {}", match_id, e);
