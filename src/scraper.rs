@@ -1,3 +1,4 @@
+use cnxns::app::psql::app_schema::{CREATE_DAILY_SELECTION_TABLE, GENERATE_DAILY_SELECTION};
 use cnxns::db::api::fixtures::get_leagues_fixtures;
 use cnxns::db::api::generate_key::generate_api_key;
 use cnxns::db::api::matches::get_match_stats;
@@ -28,6 +29,10 @@ fn fill_db(config: toml::Value) -> Result<(), Box<dyn std::error::Error>> {
     let mut db_client = PgClient::connect(&database_url, NoTls).unwrap();
     db_client.batch_execute(CREATE_TABLES_SQL).unwrap();
     db_client.batch_execute(CHECK_SCRAPING_COUNTS).unwrap();
+    db_client
+        .batch_execute(CREATE_DAILY_SELECTION_TABLE)
+        .unwrap();
+    db_client.batch_execute(GENERATE_DAILY_SELECTION).unwrap();
 
     println!("Starting fixtures...");
     get_leagues_fixtures(&mut db_client, &config)?;
