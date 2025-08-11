@@ -1,6 +1,12 @@
-use crate::app::backend::{get_challenge_players, search_players_by_name};
+use crate::app::backend::{check_player_connection, get_challenge_players, search_players_by_name};
+use crate::app::data_types::{ConnectionRequest, Player};
 use crate::app::html::home_page;
-use axum::{extract::Query, response::Json, routing::get, Router};
+use axum::{
+    extract::Query,
+    response::Json,
+    routing::{get, post},
+    Router,
+};
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
@@ -15,6 +21,7 @@ pub async fn run_server() {
     let app = Router::new()
         .route("/", get(challenge_handler))
         .route("/api/search", get(search_handler))
+        .route("/api/check-connection", post(connection_handler))
         .nest_service("/static", static_service);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -36,4 +43,32 @@ async fn search_handler(
         .await
         .unwrap_or_else(|_| vec![]);
     Json(players)
+}
+
+async fn connection_handler(Json(payload): Json<ConnectionRequest>) -> Json<serde_json::Value> {
+    println!("Connection handler called with: {:?}", payload);
+    let players = vec![
+        Player {
+            player_id: payload.player1_id,
+            player_name: "".to_string(),
+        },
+        Player {
+            player_id: payload.player2_id,
+            player_name: "".to_string(),
+        },
+    ];
+
+    let connection = check_player_connection(players).await.unwrap_or(None);
+    println!("Connection checked returning: {:?}", connection);
+    let response = match connection {
+        None => serde_json::json!({"success": false, "message": "No shared matches!"}),
+        Some(player_connection) => serde_json::json!({
+            "success": true,
+            "shared_matches": player_connection.matches_together,
+            "team_id": player_connection.team_id
+        }),
+    };
+
+    println!("Returning response: {:?}", response);
+    Json(response)
 }

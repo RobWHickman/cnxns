@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Player {
@@ -6,6 +6,13 @@ pub struct Player {
     pub player_name: String,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct ConnectionRequest {
+    pub player1_id: String,
+    pub player2_id: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct PlayerConnection {
     pub player1: Player,
     pub player2: Player,
