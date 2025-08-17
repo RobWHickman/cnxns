@@ -42,6 +42,7 @@ pub async fn run_server() {
         .route("/", get(challenge_handler))
         .route("/api/search", get(search_handler))
         .route("/api/check-connection", post(connection_handler))
+        .route("/api/remove-player", post(remove_player_handler))
         .nest_service("/static", static_service)
         .with_state(client);
 
@@ -135,4 +136,32 @@ async fn connection_handler(
         updated_chain,
         is_complete,
     ))
+}
+
+async fn remove_player_handler(
+    State(client): State<Arc<Client>>,
+    Json(payload): Json<Vec<String>>,
+) -> Json<ConnectionResponse> {
+    if payload.len() <= 1 {
+        return Json(ConnectionResponse::failure("Cannot remove starting player"));
+    }
+
+    let mut updated_chain = payload;
+    updated_chain.pop();
+    
+    let is_complete = if let Some(last_player) = updated_chain.last() {
+        check_game_completion(client.as_ref(), last_player).await.unwrap_or(false)
+    } else {
+        false
+    };
+
+    Json(ConnectionResponse {
+        success: true,
+        shared_matches: None,
+        team_id: None,
+        updated_chain: Some(updated_chain.clone()),
+        is_complete: Some(is_complete),
+        chain_length: Some(updated_chain.len()),
+        message: None,
+    })
 }

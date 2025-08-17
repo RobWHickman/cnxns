@@ -46,6 +46,8 @@ function attachSearchListeners(input, dropdown) {
 }
 
 function checkPlayerConnection(selectedPlayerId, inputElement) {
+    console.log('Checking connection for:', selectedPlayerId);
+    
     fetch('/api/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -56,9 +58,12 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('Connection response:', data);
+        
         if (!data.success) {
             alert('No shared matches!');
         } else {
+            console.log('About to lock in player');
             lockInPlayer(selectedPlayerId, inputElement);
             
             if (data.is_complete) {
@@ -75,6 +80,21 @@ function lockInPlayer(playerId, inputElement) {
     inputElement.disabled = true;
     inputElement.style.backgroundColor = '#e9e9e9';
     
+    if (playerChain.length > 1) {
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.onclick = removeLastPlayer;
+        inputElement.parentElement.appendChild(removeBtn);
+        console.log('Added remove button:', removeBtn); 
+    }
+    
+    document.querySelectorAll('.remove-btn').forEach((btn, index) => {
+        if (index < document.querySelectorAll('.remove-btn').length - 1) {
+            btn.remove();
+        }
+    });
+    
     const newInputContainer = document.createElement('div');
     newInputContainer.className = 'input-container';
     newInputContainer.innerHTML = `
@@ -88,6 +108,51 @@ function lockInPlayer(playerId, inputElement) {
     const newInput = newInputContainer.querySelector('.connection-input');
     const newDropdown = newInputContainer.querySelector('.autocomplete-dropdown');
     attachSearchListeners(newInput, newDropdown);
+}
+
+function removeLastPlayer() {
+    if (playerChain.length <= 1) return;
+    
+    fetch('/api/remove-player', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(playerChain)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            playerChain = data.updated_chain;
+            
+            const containers = document.querySelectorAll('.input-container');
+            const lastContainer = containers[containers.length - 1];
+            if (lastContainer) {
+                lastContainer.remove();
+            }
+            
+            const inputs = document.querySelectorAll('.connection-input');
+            const lastInput = inputs[inputs.length - 1];
+            if (lastInput && lastInput.disabled) {
+                lastInput.disabled = false;
+                lastInput.style.backgroundColor = '';
+                lastInput.value = '';
+            }
+            
+            document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());
+            
+            if (playerChain.length > 1) {
+                const lockedInputs = document.querySelectorAll('.connection-input:disabled');
+                const lastLockedInput = lockedInputs[lockedInputs.length - 1];
+                if (lastLockedInput) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-btn';
+                    removeBtn.innerHTML = '×';
+                    removeBtn.onclick = removeLastPlayer;
+                    lastLockedInput.parentElement.appendChild(removeBtn);
+                }
+            }
+        }
+    })
+    .catch(error => console.error('Remove error:', error));
 }
 
 function completeGame(chainLength) {
