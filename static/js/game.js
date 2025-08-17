@@ -1,0 +1,125 @@
+let playerChain = [document.querySelector('.game-container').dataset.player1Id];
+
+function attachSearchListeners(input, dropdown) {
+    let searchTimeout;
+    
+    input.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            dropdown.style.display = 'none';
+            return;
+        }
+
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(players => {
+                    dropdown.innerHTML = '';
+                    
+                    if (players.length === 0) {
+                        dropdown.style.display = 'none';
+                        return;
+                    }
+
+                    players.forEach(player => {
+                        const item = document.createElement('div');
+                        item.className = 'autocomplete-item';
+                        item.textContent = player.player_name;
+                        item.addEventListener('click', () => {
+                            input.value = player.player_name;
+                            dropdown.style.display = 'none';
+                            checkPlayerConnection(player.player_id, input);
+                        });
+                        dropdown.appendChild(item);
+                    });
+
+                    dropdown.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    dropdown.style.display = 'none';
+                });
+        }, 300);
+    });
+}
+
+function checkPlayerConnection(selectedPlayerId, inputElement) {
+    fetch('/api/check-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            player_ids_chain: playerChain,
+            new_player_id: selectedPlayerId 
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            alert('No shared matches!');
+        } else {
+            lockInPlayer(selectedPlayerId, inputElement);
+            
+            if (data.is_complete) {
+                completeGame(data.chain_length);
+            }
+        }
+    })
+    .catch(error => console.error('Connection check error:', error));
+}
+
+function lockInPlayer(playerId, inputElement) {
+    playerChain.push(playerId);
+    
+    inputElement.disabled = true;
+    inputElement.style.backgroundColor = '#e9e9e9';
+    
+    const newInputContainer = document.createElement('div');
+    newInputContainer.className = 'input-container';
+    newInputContainer.innerHTML = `
+        <input type="text" class="connection-input" placeholder="Add another connecting player...">
+        <div class="autocomplete-dropdown"></div>
+    `;
+    
+    const currentContainer = inputElement.parentElement;
+    currentContainer.parentNode.insertBefore(newInputContainer, currentContainer.nextSibling);
+    
+    const newInput = newInputContainer.querySelector('.connection-input');
+    const newDropdown = newInputContainer.querySelector('.autocomplete-dropdown');
+    attachSearchListeners(newInput, newDropdown);
+}
+
+function completeGame(chainLength) {
+    const score = chainLength - 1;
+    
+    const lastInput = document.querySelector('.connection-input:not(:disabled)');
+    if (lastInput) {
+        lastInput.parentElement.remove();
+    }
+    
+    const gameContainer = document.querySelector('.game-container');
+    const completionDiv = document.createElement('div');
+    completionDiv.innerHTML = `
+        <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
+            <h2>🎉 Completed!</h2>
+            <p>You connected the players in ${score} steps!</p>
+        </div>
+    `;
+    
+    gameContainer.appendChild(completionDiv);
+}
+
+const initialInput = document.getElementById('player-search');
+const initialDropdown = document.getElementById('autocomplete-dropdown');
+attachSearchListeners(initialInput, initialDropdown);
+
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+        const container = dropdown.parentElement;
+        const input = container.querySelector('.connection-input');
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+});
