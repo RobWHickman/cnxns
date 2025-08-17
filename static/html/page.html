@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tifo Podcast Football Connections Game</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="game-container" data-player1-id="{{player1_id}}">
+        <h1>Tifo Podcast Football Connections Game</h1>
+        
+        <div class="player-box">
+            <h3>{{player1_name}}</h3>
+        </div>
+        
+        <div class="input-container">
+            <input type="text" id="player-search" class="connection-input" placeholder="Add a connecting player...">
+            <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
+        </div>
+        
+        <div class="player-box">
+            <h3>{{player2_name}}</h3>
+        </div>
+        
+        <p>Connect these players through their teammates!</p>
+    </div>
+
+    <!-- Footer images and stripes -->
+    <div class="corner-images">
+        <img src="/static/img/tifo.png" alt="Tifo" class="corner-img left">
+        <img src="/static/img/fbref.svg" alt="FBRef" class="corner-img right">
+    </div>
+    
+    <div class="bottom-stripes">
+        <div class="stripe"></div>
+        <div class="stripe"></div>
+    </div>
+
+    <script src="/static/js/game.js"></script>
+</body>
+</html>
