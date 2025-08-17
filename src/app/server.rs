@@ -1,5 +1,7 @@
-use crate::app::backend::{check_player_connection, get_challenge_players, search_players_by_name};
-use crate::app::data_types::{ConnectionRequest, ConnectionResponse};
+use crate::app::backend::{
+    check_game_completion, check_player_connection, get_challenge_players, search_players_by_name,
+};
+use crate::app::connection_types::{ConnectionRequest, ConnectionResponse};
 use crate::app::html::home_page;
 use axum::extract::State;
 use axum::{
@@ -57,7 +59,7 @@ async fn challenge_handler(State(client): State<Arc<Client>>) -> axum::response:
 async fn search_handler(
     Query(params): Query<SearchQuery>,
     State(client): State<Arc<Client>>,
-) -> Json<Vec<crate::app::data_types::Player>> {
+) -> Json<Vec<crate::app::entity_types::Player>> {
     let players = search_players_by_name(&client, &params.q)
         .await
         .unwrap_or_else(|_| vec![]);
@@ -75,39 +77,19 @@ async fn connection_handler(
         .unwrap_or(None);
 
     let response = match connection {
-        None => Json(ConnectionResponse {
-            success: false,
-            message: Some("No shared matches!".to_string()),
-            shared_matches: None,
-            team_id: None,
-            updated_chain: None,
-            is_complete: None,
-            chain_length: None,
-        }),
+        None => Json(ConnectionResponse::failure()),
 
         Some(player_connection) => {
             let mut updated_chain = payload.player_ids_chain.clone();
             updated_chain.push(new_player_id.clone());
-            let chain_length = updated_chain.len();
-
-            let starting_state = get_challenge_players(&*client).await.unwrap();
-            let target_player_id = &starting_state.player2.player_id;
-
-            let completion_check = check_player_connection(&*client, new_player_id.clone(), target_player_id.clone())
+            let is_complete = check_game_completion(client.as_ref(), &new_player_id)
                 .await
-                .unwrap_or(None);
-
-            let is_complete = completion_check.is_some();
-
-            Json(ConnectionResponse {
-                success: true,
-                shared_matches: Some(player_connection.matches_together),
-                team_id: Some(player_connection.team_id),
-                updated_chain: Some(updated_chain),
-                is_complete: Some(is_complete),
-                chain_length: Some(chain_length),
-                message: None,
-            })
+                .unwrap_or(false);
+            Json(ConnectionResponse::success(
+                player_connection,
+                updated_chain,
+                is_complete,
+            ))
         }
     };
 

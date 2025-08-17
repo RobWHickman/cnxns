@@ -1,4 +1,5 @@
-use crate::app::data_types::{DailyChallenge, Player, PlayerConnection};
+use crate::app::connection_types::PlayerConnection;
+use crate::app::entity_types::{DailyChallenge, Player};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
 use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
@@ -100,4 +101,21 @@ pub async fn check_player_connection(
         matches_together: shared_matches as i32,
         team_id,
     }))
+}
+
+pub async fn check_game_completion(
+    client: &Client,
+    new_player_id: &str,
+) -> Result<bool, Box<dyn std::error::Error>> {
+    let starting_state = get_challenge_players(&*client).await.unwrap();
+    let target_player_id = &starting_state.player2.player_id;
+
+    let completion_check = check_player_connection(
+        client,
+        new_player_id.to_string(),
+        target_player_id.to_string(),
+    )
+    .await?;
+
+    Ok(completion_check.is_some())
 }
