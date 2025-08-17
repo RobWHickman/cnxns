@@ -157,12 +157,14 @@ function removeLastPlayer() {
 
 function completeGame(chainLength) {
     const score = chainLength - 1;
-    
+
     const lastInput = document.querySelector('.connection-input:not(:disabled)');
     if (lastInput) {
         lastInput.parentElement.remove();
     }
-    
+
+    document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());
+
     const gameContainer = document.querySelector('.game-container');
     const completionDiv = document.createElement('div');
     completionDiv.innerHTML = `
