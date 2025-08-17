@@ -60,22 +60,36 @@ async fn connection_handler(Json(payload): Json<ConnectionRequest>) -> Json<serd
         None => serde_json::json!({"success": false, "message": "No shared matches!"}),
         Some(player_connection) => {
             let mut updated_chain = payload.current_chain.clone();
-            updated_chain.push(new_player_id);
+            updated_chain.push(new_player_id.clone());
+
+            let game_state = get_challenge_players().await.unwrap();
+            let target_player_id = &game_state.start_player2.player_id;
             
+            let completion_check = check_player_connection(vec![
+                Player { player_id: new_player_id, player_name: "".to_string() },
+                Player { player_id: target_player_id.clone(), player_name: "".to_string() },
+            ]).await.unwrap_or(None);
+            
+            let is_complete = completion_check.is_some();
+            println!("IS COMPLETE: {:?}", is_complete);
+
             serde_json::json!({
                 "success": true,
                 "shared_matches": player_connection.matches_together,
                 "team_id": player_connection.team_id,
-                "updated_chain": updated_chain
+                "updated_chain": updated_chain,
+                "is_complete": is_complete,
+                "chain_length": updated_chain.len()
             })
         }
     };
 
     println!("Returning response: {:?}", response);
+    
     Json(response)
 }
 
-async fn add_player_handler(Json(payload): Json<ConnectionRequest>) -> Json<serde_json::Value> {
+async fn add_player_handler(Json(_payload): Json<ConnectionRequest>) -> Json<serde_json::Value> {
     // Add player to game state logic
     Json(serde_json::json!({"success": true}))
 }

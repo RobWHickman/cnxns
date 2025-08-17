@@ -1,4 +1,4 @@
-use crate::app::data_types::{GameState, Player};
+use crate::app::data_types::{GameState};
 use axum::response::Html;
 
 pub async fn home_page(game_state: GameState) -> Html<String> {
@@ -222,6 +222,10 @@ fn get_javascript() -> &'static str {
                     alert('No shared matches!');
                 } else {
                     lockInPlayer(selectedPlayerId, inputElement);
+                    
+                    if (data.is_complete) {
+                        completeGame(data.chain_length);
+                    }
                 }
             })
             .catch(error => console.error('Connection check error:', error));
@@ -246,6 +250,26 @@ fn get_javascript() -> &'static str {
             const newInput = newInputContainer.querySelector('.connection-input');
             const newDropdown = newInputContainer.querySelector('.autocomplete-dropdown');
             attachSearchListeners(newInput, newDropdown);
+        }
+
+        function completeGame(chainLength) {
+            const score = chainLength - 1;
+            
+            const lastInput = document.querySelector('.connection-input:not(:disabled)');
+            if (lastInput) {
+                lastInput.parentElement.remove();
+            }
+            
+            const gameContainer = document.querySelector('.game-container');
+            const completionDiv = document.createElement('div');
+            completionDiv.innerHTML = `
+                <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
+                    <h2>🎉 Completed!</h2>
+                    <p>You connected the players in ${score} steps!</p>
+                </div>
+            `;
+            
+            gameContainer.appendChild(completionDiv);
         }
 
         const initialInput = document.getElementById('player-search');
