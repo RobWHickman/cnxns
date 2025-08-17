@@ -71,6 +71,7 @@ async fn connection_handler(Json(payload): Json<ConnectionRequest>) -> Json<serd
         }
     };
 
+    println!("Returning response: {:?}", response);
     Json(response)
 }
 
