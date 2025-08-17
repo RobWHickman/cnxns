@@ -160,55 +160,54 @@ fn get_footer_images() -> &'static str {
 
 fn get_javascript() -> &'static str {
     r#"<script>
-       const searchInput = document.getElementById('player-search');
-       const dropdown = document.getElementById('autocomplete-dropdown');
         let playerChain = [document.querySelector('.game-container').dataset.player1Id];
 
-       let searchTimeout;
+        function attachSearchListeners(input, dropdown) {
+            let searchTimeout;
+            
+            input.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                if (query.length < 2) {
+                    dropdown.style.display = 'none';
+                    return;
+                }
 
-       searchInput.addEventListener('input', function() {
-           const query = this.value.trim();
-           
-           if (query.length < 2) {
-               dropdown.style.display = 'none';
-               return;
-           }
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(players => {
+                            dropdown.innerHTML = '';
+                            
+                            if (players.length === 0) {
+                                dropdown.style.display = 'none';
+                                return;
+                            }
 
-           clearTimeout(searchTimeout);
-           searchTimeout = setTimeout(() => {
-               fetch(`/api/search?q=${encodeURIComponent(query)}`)
-                   .then(response => response.json())
-                   .then(players => {
-                       dropdown.innerHTML = '';
-                       
-                       if (players.length === 0) {
-                           dropdown.style.display = 'none';
-                           return;
-                       }
+                            players.forEach(player => {
+                                const item = document.createElement('div');
+                                item.className = 'autocomplete-item';
+                                item.textContent = player.player_name;
+                                item.addEventListener('click', () => {
+                                    input.value = player.player_name;
+                                    dropdown.style.display = 'none';
+                                    checkPlayerConnection(player.player_id, input);
+                                });
+                                dropdown.appendChild(item);
+                            });
 
-                       players.forEach(player => {
-                           const item = document.createElement('div');
-                           item.className = 'autocomplete-item';
-                           item.textContent = player.player_name;
-                           item.addEventListener('click', () => {
-                               searchInput.value = player.player_name;
-                               dropdown.style.display = 'none';
-                           
-                               checkPlayerConnection(player.player_id);
-                           });
-                           dropdown.appendChild(item);
-                       });
+                            dropdown.style.display = 'block';
+                        })
+                        .catch(error => {
+                            console.error('Search error:', error);
+                            dropdown.style.display = 'none';
+                        });
+                }, 300);
+            });
+        }
 
-                       dropdown.style.display = 'block';
-                   })
-                   .catch(error => {
-                       console.error('Search error:', error);
-                       dropdown.style.display = 'none';
-                   });
-           }, 300);
-       });
-
-       function checkPlayerConnection(selectedPlayerId) {
+        function checkPlayerConnection(selectedPlayerId, inputElement) {
             fetch('/api/check-connection', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -217,45 +216,50 @@ fn get_javascript() -> &'static str {
                     new_player_id: selectedPlayerId 
                 })
             })
-           .then(response => response.json())
-           .then(data => {
-               console.log('Received data:', data);
-               if (!data.success) {
-                   console.log('About to show alert');
-                   alert('No shared matches!');
-               } else {
-                   lockInPlayer(selectedPlayerId);
-               }
-           })
-           .catch(error => console.error('Connection check error:', error));
-       }
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    alert('No shared matches!');
+                } else {
+                    lockInPlayer(selectedPlayerId, inputElement);
+                }
+            })
+            .catch(error => console.error('Connection check error:', error));
+        }
 
-        function lockInPlayer(playerId) {
+        function lockInPlayer(playerId, inputElement) {
             playerChain.push(playerId);
-
-            const currentInput = document.getElementById('player-search');
-            const container = currentInput.parentElement;
             
-            currentInput.disabled = true;
-            currentInput.style.backgroundColor = '#e9e9e9';
+            inputElement.disabled = true;
+            inputElement.style.backgroundColor = '#e9e9e9';
             
             const newInputContainer = document.createElement('div');
             newInputContainer.className = 'input-container';
             newInputContainer.innerHTML = `
-                <input type="text" id="player-search" class="connection-input" placeholder="Add another connecting player...">
-                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
+                <input type="text" class="connection-input" placeholder="Add another connecting player...">
+                <div class="autocomplete-dropdown"></div>
             `;
             
-            container.parentNode.insertBefore(newInputContainer, container.nextSibling);
+            const currentContainer = inputElement.parentElement;
+            currentContainer.parentNode.insertBefore(newInputContainer, currentContainer.nextSibling);
             
-            // Reattach event listeners to new input
-            attachSearchListeners();
+            const newInput = newInputContainer.querySelector('.connection-input');
+            const newDropdown = newInputContainer.querySelector('.autocomplete-dropdown');
+            attachSearchListeners(newInput, newDropdown);
         }
 
-       document.addEventListener('click', function(e) {
-           if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-               dropdown.style.display = 'none';
-           }
-       });
-   </script>"#
+        const initialInput = document.getElementById('player-search');
+        const initialDropdown = document.getElementById('autocomplete-dropdown');
+        attachSearchListeners(initialInput, initialDropdown);
+
+        document.addEventListener('click', function(e) {
+            document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+                const container = dropdown.parentElement;
+                const input = container.querySelector('.connection-input');
+                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+        });
+    </script>"#
 }
