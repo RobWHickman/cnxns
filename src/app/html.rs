@@ -1,7 +1,7 @@
-use crate::app::data_types::{GameState};
+use crate::app::data_types::DailyChallenge;
 use axum::response::Html;
 
-pub async fn home_page(game_state: GameState) -> Html<String> {
+pub async fn home_page(game_state: DailyChallenge) -> Html<String> {
     let html = format!(
         r#"<!DOCTYPE html>
         <html>
@@ -120,7 +120,7 @@ fn get_styles() -> &'static str {
     </style>"#
 }
 
-fn get_game_content(game_state: &GameState) -> String {
+fn get_game_content(starting_state: &DailyChallenge) -> String {
     format!(
         r#"<div class="game-container" data-player1-id="{}">
             <h1>Tifo Podcast Football Connections Game</h1>
@@ -140,9 +140,9 @@ fn get_game_content(game_state: &GameState) -> String {
             
             <p>Connect these players through their teammates!</p>
         </div>"#,
-        game_state.start_player1.player_id,
-        game_state.start_player1.player_name,
-        game_state.start_player2.player_name
+        starting_state.player1.player_id,
+        starting_state.player1.player_name,
+        starting_state.player2.player_name,
     )
 }
 
@@ -212,7 +212,7 @@ fn get_javascript() -> &'static str {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    current_chain: playerChain,
+                    player_ids_chain: playerChain,
                     new_player_id: selectedPlayerId 
                 })
             })

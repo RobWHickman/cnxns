@@ -1,23 +1,13 @@
-use crate::app::data_types::{GameState, Player, PlayerConnection};
+use crate::app::data_types::{DailyChallenge, Player, PlayerConnection};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
 use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
 use chrono::Local;
-use dotenv::dotenv;
-use std::env;
-use tokio_postgres::NoTls;
+use tokio_postgres::Client;
 
-pub async fn get_challenge_players() -> Result<GameState, Box<dyn std::error::Error>> {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-
+pub async fn get_challenge_players(
+    client: &Client,
+) -> Result<DailyChallenge, Box<dyn std::error::Error>> {
     let today_date = Local::now().date_naive();
     let rows = client.query(GET_DAILY_PLAYERS, &[&today_date]).await?;
 
@@ -52,27 +42,17 @@ pub async fn get_challenge_players() -> Result<GameState, Box<dyn std::error::Er
         },
     ];
 
-    Ok(GameState {
-        start_player1: players[0].clone(),
-        start_player2: players[1].clone(),
-        intermediate_players: Vec::new(),
-        connections: Vec::new(),
+    Ok(DailyChallenge {
+        player1: players[0].clone(),
+        player2: players[1].clone(),
+        shortest_route: 0,
     })
 }
 
 pub async fn search_players_by_name(
+    client: &Client,
     query: &str,
 ) -> Result<Vec<Player>, Box<dyn std::error::Error>> {
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-
     let search_query = format!("%{}%", query.to_lowercase());
     let rows = client
         .query(SEARCH_PLAYERS_BY_NAME, &[&search_query])
@@ -90,27 +70,16 @@ pub async fn search_players_by_name(
 }
 
 pub async fn check_player_connection(
-    players: Vec<Player>,
+    client: &Client,
+    player1_id: String,
+    player2_id: String,
 ) -> Result<Option<PlayerConnection>, Box<dyn std::error::Error>> {
-    if players.len() != 2 {
-        return Err("Exactly 2 players required".into());
+    if player1_id.is_empty() || player2_id.is_empty() {
+        return Err("Player IDs cannot be empty".into());
     }
 
-    dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
-
     let rows: Vec<postgres::Row> = client
-        .query(
-            CHECK_PLAYERS_CONNECTED,
-            &[&players[0].player_id, &players[1].player_id],
-        )
+        .query(CHECK_PLAYERS_CONNECTED, &[&player1_id, &player2_id])
         .await?;
 
     if rows.is_empty() {
@@ -122,12 +91,12 @@ pub async fn check_player_connection(
 
     println!(
         "Found {} shared matches between {} and {} on team {}",
-        shared_matches, &players[0].player_id, &players[1].player_id, team_id
+        shared_matches, &player1_id, &player2_id, team_id
     );
 
     Ok(Some(PlayerConnection {
-        player1: players[0].clone(),
-        player2: players[1].clone(),
+        player1_id: player1_id,
+        player2_id: player2_id,
         matches_together: shared_matches as i32,
         team_id,
     }))
