@@ -1,4 +1,4 @@
-use crate::app::data_types::{Player, PlayerConnection};
+use crate::app::data_types::{GameState, Player, PlayerConnection};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
 use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
@@ -7,7 +7,7 @@ use dotenv::dotenv;
 use std::env;
 use tokio_postgres::NoTls;
 
-pub async fn get_challenge_players() -> Result<Vec<Player>, Box<dyn std::error::Error>> {
+pub async fn get_challenge_players() -> Result<GameState, Box<dyn std::error::Error>> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -52,7 +52,12 @@ pub async fn get_challenge_players() -> Result<Vec<Player>, Box<dyn std::error::
         },
     ];
 
-    Ok(players)
+    Ok(GameState {
+        start_player1: players[0].clone(),
+        start_player2: players[1].clone(),
+        intermediate_players: Vec::new(),
+        connections: Vec::new(),
+    })
 }
 
 pub async fn search_players_by_name(
@@ -87,18 +92,12 @@ pub async fn search_players_by_name(
 pub async fn check_player_connection(
     players: Vec<Player>,
 ) -> Result<Option<PlayerConnection>, Box<dyn std::error::Error>> {
-    println!(
-        "Starting check_player_connection with players: {:?}",
-        players
-    );
-
     if players.len() != 2 {
         return Err("Exactly 2 players required".into());
     }
 
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    println!("Connecting to database...");
 
     let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await?;
     tokio::spawn(async move {
@@ -107,22 +106,14 @@ pub async fn check_player_connection(
         }
     });
 
-    println!(
-        "About to execute query with player IDs: {} and {}",
-        players[0].player_id, players[1].player_id
-    );
-
-    let rows = client
+    let rows: Vec<postgres::Row> = client
         .query(
             CHECK_PLAYERS_CONNECTED,
             &[&players[0].player_id, &players[1].player_id],
         )
         .await?;
 
-    println!("Query executed, got {} rows", rows.len());
-
     if rows.is_empty() {
-        println!("No rows returned, returning None");
         return Ok(None);
     }
 
@@ -130,8 +121,8 @@ pub async fn check_player_connection(
     let team_id: String = rows[0].get("team_id");
 
     println!(
-        "Found {} shared matches on team {}",
-        shared_matches, team_id
+        "Found {} shared matches between {} and {} on team {}",
+        shared_matches, &players[0].player_id, &players[1].player_id, team_id
     );
 
     Ok(Some(PlayerConnection {

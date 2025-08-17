@@ -1,10 +1,7 @@
-use crate::app::data_types::Player;
+use crate::app::data_types::{GameState, Player};
 use axum::response::Html;
 
-pub async fn home_page(players: Vec<Player>) -> Html<String> {
-    let player1_name = &players[0].player_name;
-    let player2_name = &players[1].player_name;
-
+pub async fn home_page(game_state: GameState) -> Html<String> {
     let html = format!(
         r#"<!DOCTYPE html>
         <html>
@@ -19,7 +16,7 @@ pub async fn home_page(players: Vec<Player>) -> Html<String> {
         </body>
         </html>"#,
         get_styles(),
-        get_game_content(player1_name, player2_name),
+        get_game_content(&game_state),
         get_footer_images(),
         get_javascript()
     );
@@ -123,9 +120,9 @@ fn get_styles() -> &'static str {
     </style>"#
 }
 
-fn get_game_content(player1_name: &str, player2_name: &str) -> String {
+fn get_game_content(game_state: &GameState) -> String {
     format!(
-        r#"<div class="game-container">
+        r#"<div class="game-container" data-player1-id="{}">
             <h1>Tifo Podcast Football Connections Game</h1>
             
             <div class="player-box">
@@ -143,7 +140,9 @@ fn get_game_content(player1_name: &str, player2_name: &str) -> String {
             
             <p>Connect these players through their teammates!</p>
         </div>"#,
-        player1_name, player2_name
+        game_state.start_player1.player_id,
+        game_state.start_player1.player_name,
+        game_state.start_player2.player_name
     )
 }
 
@@ -163,6 +162,7 @@ fn get_javascript() -> &'static str {
     r#"<script>
        const searchInput = document.getElementById('player-search');
        const dropdown = document.getElementById('autocomplete-dropdown');
+        let playerChain = [document.querySelector('.game-container').dataset.player1Id];
 
        let searchTimeout;
 
@@ -209,16 +209,14 @@ fn get_javascript() -> &'static str {
        });
 
        function checkPlayerConnection(selectedPlayerId) {
-           const player1_id = "c0c5ee74";
-           
-           fetch('/api/check-connection', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ 
-                   player1_id: player1_id, 
-                   player2_id: selectedPlayerId 
-               })
-           })
+            fetch('/api/check-connection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    current_chain: playerChain,
+                    new_player_id: selectedPlayerId 
+                })
+            })
            .then(response => response.json())
            .then(data => {
                console.log('Received data:', data);
@@ -232,25 +230,27 @@ fn get_javascript() -> &'static str {
            .catch(error => console.error('Connection check error:', error));
        }
 
-       function lockInPlayer(playerId) {
-           const currentInput = document.getElementById('player-search');
-           const container = currentInput.parentElement;
-           
-           // Disable current input
-           currentInput.disabled = true;
-           currentInput.style.backgroundColor = '#e9e9e9';
-           
-           // Create new input container
-           const newInputContainer = document.createElement('div');
-           newInputContainer.className = 'input-container';
-           newInputContainer.innerHTML = `
-               <input type="text" class="connection-input" placeholder="Add another connecting player...">
-               <div class="autocomplete-dropdown"></div>
-           `;
-           
-           // Insert after current container
-           container.parentNode.insertBefore(newInputContainer, container.nextSibling);
-       }
+        function lockInPlayer(playerId) {
+            playerChain.push(playerId);
+
+            const currentInput = document.getElementById('player-search');
+            const container = currentInput.parentElement;
+            
+            currentInput.disabled = true;
+            currentInput.style.backgroundColor = '#e9e9e9';
+            
+            const newInputContainer = document.createElement('div');
+            newInputContainer.className = 'input-container';
+            newInputContainer.innerHTML = `
+                <input type="text" id="player-search" class="connection-input" placeholder="Add another connecting player...">
+                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
+            `;
+            
+            container.parentNode.insertBefore(newInputContainer, container.nextSibling);
+            
+            // Reattach event listeners to new input
+            attachSearchListeners();
+        }
 
        document.addEventListener('click', function(e) {
            if (!searchInput.contains(e.target) && !dropdown.contains(e.target)) {

@@ -22,6 +22,7 @@ pub async fn run_server() {
         .route("/", get(challenge_handler))
         .route("/api/search", get(search_handler))
         .route("/api/check-connection", post(connection_handler))
+        .route("/api/add-player", post(add_player_handler))
         .nest_service("/static", static_service);
 
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
@@ -32,8 +33,9 @@ pub async fn run_server() {
 }
 
 async fn challenge_handler() -> axum::response::Html<String> {
-    let challenge_players = get_challenge_players().await.unwrap();
-    home_page(challenge_players).await
+    let game_state = get_challenge_players().await.unwrap();
+    println!("Game state: {:?}", game_state);
+    home_page(game_state).await
 }
 
 async fn search_handler(
@@ -46,29 +48,33 @@ async fn search_handler(
 }
 
 async fn connection_handler(Json(payload): Json<ConnectionRequest>) -> Json<serde_json::Value> {
-    println!("Connection handler called with: {:?}", payload);
-    let players = vec![
-        Player {
-            player_id: payload.player1_id,
-            player_name: "".to_string(),
-        },
-        Player {
-            player_id: payload.player2_id,
-            player_name: "".to_string(),
-        },
+    println!("Current chain: {:?}", payload.current_chain);
+    let new_player_id = payload.new_player_id.clone();
+    let last_player_id = payload.current_chain.last().unwrap();
+    let players: Vec<Player> = vec![
+        Player { player_id: last_player_id.clone(), player_name: "".to_string() },
+        Player { player_id: new_player_id.clone(), player_name: "".to_string() },  // Use new_player_id here
     ];
-
     let connection = check_player_connection(players).await.unwrap_or(None);
-    println!("Connection checked returning: {:?}", connection);
     let response = match connection {
         None => serde_json::json!({"success": false, "message": "No shared matches!"}),
-        Some(player_connection) => serde_json::json!({
-            "success": true,
-            "shared_matches": player_connection.matches_together,
-            "team_id": player_connection.team_id
-        }),
+        Some(player_connection) => {
+            let mut updated_chain = payload.current_chain.clone();
+            updated_chain.push(new_player_id);
+            
+            serde_json::json!({
+                "success": true,
+                "shared_matches": player_connection.matches_together,
+                "team_id": player_connection.team_id,
+                "updated_chain": updated_chain
+            })
+        }
     };
 
-    println!("Returning response: {:?}", response);
     Json(response)
+}
+
+async fn add_player_handler(Json(payload): Json<ConnectionRequest>) -> Json<serde_json::Value> {
+    // Add player to game state logic
+    Json(serde_json::json!({"success": true}))
 }

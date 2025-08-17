@@ -8,8 +8,8 @@ pub struct Player {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ConnectionRequest {
-    pub player1_id: String,
-    pub player2_id: String,
+    pub current_chain: Vec<String>,
+    pub new_player_id: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -20,33 +20,10 @@ pub struct PlayerConnection {
     pub team_id: String,
 }
 
+#[derive(Debug)]
 pub struct GameState {
     pub start_player1: Player,
     pub start_player2: Player,
     pub intermediate_players: Vec<Player>,
     pub connections: Vec<PlayerConnection>,
 }
-
-// impl GameState {
-//     pub fn add_intermediate_player(&mut self, player: Player) -> Result<(), String> {
-//         let last_player = self.get_last_player();
-//         let players_connection: PlayerConnection = get_matches_together(&last_player.player_id, &player.player_id)?;
-
-//         if players_connection.matches_together == 0 {
-//             return Err("Players never played together".to_string());
-//         }
-
-//         self.connections.push(PlayerConnection {
-//             player1: last_player.clone(),
-//             player2: player.clone(),
-//             matches_together,
-//         });
-
-//         self.intermediate_players.push(player);
-//         Ok(())
-//     }
-
-//     fn get_last_player(&self) -> &Player {
-//         self.intermediate_players.last().unwrap_or(&self.start_player1)
-//     }
-// }
