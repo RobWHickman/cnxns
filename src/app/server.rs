@@ -6,6 +6,7 @@ use crate::app::html::home_page;
 use axum::extract::State;
 use axum::{
     extract::Query,
+    http::StatusCode,
     response::Json,
     routing::{get, post},
     Router,
@@ -51,47 +52,87 @@ pub async fn run_server() {
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn challenge_handler(State(client): State<Arc<Client>>) -> axum::response::Html<String> {
-    let daily_challenge = get_challenge_players(&client).await.unwrap();
-    home_page(daily_challenge).await
+async fn challenge_handler(
+    State(client): State<Arc<Client>>,
+) -> Result<axum::response::Html<String>, StatusCode> {
+    let daily_challenge = match get_challenge_players(&client).await {
+        Ok(challenge) => challenge,
+        Err(e) => {
+            println!("Error getting daily challenge: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    Ok(home_page(daily_challenge).await)
 }
-
 async fn search_handler(
     Query(params): Query<SearchQuery>,
     State(client): State<Arc<Client>>,
-) -> Json<Vec<crate::app::entity_types::Player>> {
-    let players = search_players_by_name(&client, &params.q)
-        .await
-        .unwrap_or_else(|_| vec![]);
-    Json(players)
+) -> Result<Json<Vec<crate::app::entity_types::Player>>, StatusCode> {
+    let players = match search_players_by_name(&client, &params.q).await {
+        Ok(players) => players,
+        Err(e) => {
+            println!("Error searching players: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    Ok(Json(players))
 }
 
 async fn connection_handler(
     State(client): State<Arc<Client>>,
     Json(payload): Json<ConnectionRequest>,
 ) -> Json<ConnectionResponse> {
-    let new_player_id = payload.new_player_id.clone();
-    let last_player_id = payload.player_ids_chain.last().unwrap().clone();
-    let connection = check_player_connection(&*client, last_player_id, new_player_id.clone())
-        .await
-        .unwrap_or(None);
-
-    let response = match connection {
-        None => Json(ConnectionResponse::failure()),
-
-        Some(player_connection) => {
-            let mut updated_chain = payload.player_ids_chain.clone();
-            updated_chain.push(new_player_id.clone());
-            let is_complete = check_game_completion(client.as_ref(), &new_player_id)
-                .await
-                .unwrap_or(false);
-            Json(ConnectionResponse::success(
-                player_connection,
-                updated_chain,
-                is_complete,
-            ))
+    let last_player_id = match payload.player_ids_chain.last() {
+        Some(id) => id.clone(),
+        None => {
+            println!("Error: Empty player chain in connection request");
+            return Json(ConnectionResponse::failure("Empty player chain"));
+        }
+    };
+    let new_player_id: String = payload.new_player_id.clone();
+    let connection = match check_player_connection(
+        &*client,
+        last_player_id.clone(),
+        new_player_id.clone(),
+    )
+    .await
+    {
+        Ok(Some(player_connection)) => player_connection,
+        Ok(None) => {
+            return Json(ConnectionResponse::failure(
+                "Players have never played together",
+            ));
+        }
+        Err(e) => {
+            println!(
+                "Error: Database error checking connection between {:?} and {:?}: {}",
+                last_player_id, new_player_id, e
+            );
+            return Json(ConnectionResponse::failure(
+                "Unable to check player connection",
+            ));
         }
     };
 
-    response
+    let mut updated_chain = payload.player_ids_chain.clone();
+    updated_chain.push(new_player_id.clone());
+
+    let is_complete = match check_game_completion(client.as_ref(), &new_player_id).await {
+        Ok(complete) => complete,
+        Err(e) => {
+            println!(
+                "Error checking game completion for {:?}: {}",
+                new_player_id, e
+            );
+            return Json(ConnectionResponse::failure(
+                "Unable to check game completion",
+            ));
+        }
+    };
+
+    Json(ConnectionResponse::success(
+        connection,
+        updated_chain,
+        is_complete,
+    ))
 }

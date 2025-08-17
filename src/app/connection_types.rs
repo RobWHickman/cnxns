@@ -22,6 +22,7 @@ pub struct ConnectionResponse {
     pub updated_chain: Option<Vec<String>>,
     pub is_complete: Option<bool>,
     pub chain_length: Option<usize>,
+    pub message: Option<String>,
 }
 
 impl ConnectionResponse {
@@ -38,12 +39,14 @@ impl ConnectionResponse {
             updated_chain: Some(updated_chain),
             is_complete: Some(is_complete),
             chain_length: Some(chain_length),
+            message: None,
         }
     }
 
-    pub fn failure() -> Self {
+    pub fn failure(message: &str) -> Self {
         ConnectionResponse {
             success: false,
+            message: Some(message.to_string()),
             shared_matches: None,
             team_id: None,
             updated_chain: None,
