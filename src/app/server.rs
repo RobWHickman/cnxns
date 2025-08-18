@@ -148,9 +148,11 @@ async fn remove_player_handler(
 
     let mut updated_chain = payload;
     updated_chain.pop();
-    
+
     let is_complete = if let Some(last_player) = updated_chain.last() {
-        check_game_completion(client.as_ref(), last_player).await.unwrap_or(false)
+        check_game_completion(client.as_ref(), last_player)
+            .await
+            .unwrap_or(false)
     } else {
         false
     };

@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS daily_selection (
    player2_id VARCHAR(80),
    player2_full_name VARCHAR(255),
    optimal_distance INT DEFAULT 0,
-   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   created_at_utc TIMESTAMP DEFAULT NOW(),
+   updated_at_utc TIMESTAMP DEFAULT NOW(),
    FOREIGN KEY (player1_id) REFERENCES players(player_id),
    FOREIGN KEY (player2_id) REFERENCES players(player_id),
    CONSTRAINT different_players CHECK (player1_id != player2_id)

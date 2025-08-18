@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS league_seasons (
    season_id VARCHAR(50),
    number_matches INT,
    data_count INT DEFAULT 0,
+   created_at_utc TIMESTAMP DEFAULT NOW(),
+   updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (league_id, season_id)
 );
 
@@ -18,6 +20,8 @@ CREATE TABLE IF NOT EXISTS matches (
    away_team_name VARCHAR(255),
    match_date DATE,
    data_count INT DEFAULT 0,
+   created_at_utc TIMESTAMP DEFAULT NOW(),
+   updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (league_id, season_id, match_id),
    FOREIGN KEY (league_id, season_id) REFERENCES league_seasons(league_id, season_id)
 );
@@ -27,7 +31,9 @@ CREATE TABLE IF NOT EXISTS players (
    full_name VARCHAR(255),
    nationality VARCHAR(10),
    current_club VARCHAR(80) DEFAULT NULL,
-   active BOOLEAN DEFAULT FALSE
+   active BOOLEAN DEFAULT FALSE,
+   created_at_utc TIMESTAMP DEFAULT NOW(),
+   updated_at_utc TIMESTAMP DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS player_stats (
@@ -36,6 +42,8 @@ CREATE TABLE IF NOT EXISTS player_stats (
    player_id VARCHAR(80),
    variable VARCHAR(255),
    value FLOAT,
+   created_at_utc TIMESTAMP DEFAULT NOW(),
+   updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (match_id, team_id, player_id, variable),
    FOREIGN KEY (player_id) REFERENCES players(player_id)
 );

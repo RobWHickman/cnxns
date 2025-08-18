@@ -11,6 +11,10 @@ path = "src/server.rs"
 name = "scraper"
 path = "src/scraper.rs"
 
+[[bin]]
+name = "daily"
+path = "src/daily.rs"
+
 
 [dependencies]
 scraper = "0.18"

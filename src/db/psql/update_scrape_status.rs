@@ -11,14 +11,16 @@ WITH scraped_matches AS (
     GROUP BY m.match_id
 )
 UPDATE connections.public.matches 
-SET data_count = 1
+SET data_count = 1,
+    updated_at_utc = NOW()
 FROM scraped_matches sm
 WHERE matches.match_id = sm.match_id
   AND sm.original_count > 0 
   AND sm.is_integer_division = true;
 
 UPDATE connections.public.league_seasons ls
-SET data_count = matches_summary.matches_with_data
+SET data_count = matches_summary.matches_with_data,
+    updated_at_utc = NOW()
 FROM (
     SELECT m.league_id, m.season_id, COUNT(DISTINCT m.match_id) as matches_with_data
     FROM connections.public.matches m
