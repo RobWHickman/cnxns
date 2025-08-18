@@ -24,7 +24,7 @@ fn fill_db(config: toml::Value) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("PIB_DB_URL").expect("DATABASE_URL must be set");
     let mut db_client = PgClient::connect(&database_url, NoTls).unwrap();
     db_client.batch_execute(CREATE_TABLES_SQL).unwrap();
     db_client.batch_execute(CHECK_SCRAPING_COUNTS).unwrap();

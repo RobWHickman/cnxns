@@ -26,7 +26,7 @@ struct SearchQuery {
 
 pub async fn run_server() {
     dotenv().ok();
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("PIB_DB_URL").expect("DATABASE_URL must be set");
 
     let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await.unwrap();
     tokio::spawn(async move {

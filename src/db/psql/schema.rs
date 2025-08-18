@@ -1,5 +1,5 @@
 pub const CREATE_TABLES_SQL: &str = r#"
-CREATE TABLE IF NOT EXISTS league_seasons (
+CREATE TABLE IF NOT EXISTS pi_db.connections.league_seasons (
    league_id VARCHAR(10),
    league_name VARCHAR(255),
    season_id VARCHAR(50),
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS league_seasons (
    PRIMARY KEY (league_id, season_id)
 );
 
-CREATE TABLE IF NOT EXISTS matches (
+CREATE TABLE IF NOT EXISTS pi_db.connections.matches (
    league_id VARCHAR(10),
    season_id VARCHAR(50),
    match_id VARCHAR(80),
@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS matches (
    created_at_utc TIMESTAMP DEFAULT NOW(),
    updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (league_id, season_id, match_id),
-   FOREIGN KEY (league_id, season_id) REFERENCES league_seasons(league_id, season_id)
+   FOREIGN KEY (league_id, season_id) REFERENCES pi_db.connections.league_seasons(league_id, season_id)
 );
 
-CREATE TABLE IF NOT EXISTS players (
+CREATE TABLE IF NOT EXISTS pi_db.connections.players (
    player_id VARCHAR(80) PRIMARY KEY,
    full_name VARCHAR(255),
    nationality VARCHAR(10),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS players (
    updated_at_utc TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS player_stats (
+CREATE TABLE IF NOT EXISTS pi_db.connections.player_stats (
    match_id VARCHAR(80),
    team_id VARCHAR(80),
    player_id VARCHAR(80),
@@ -45,6 +45,6 @@ CREATE TABLE IF NOT EXISTS player_stats (
    created_at_utc TIMESTAMP DEFAULT NOW(),
    updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (match_id, team_id, player_id, variable),
-   FOREIGN KEY (player_id) REFERENCES players(player_id)
+   FOREIGN KEY (player_id) REFERENCES pi_db.connections.players(player_id)
 );
 "#;
