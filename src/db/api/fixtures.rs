@@ -48,7 +48,7 @@ fn check_league_status(
     league_id: String,
     season_id: &str,
 ) -> Result<bool, Box<dyn std::error::Error>> {
-    let query = "SELECT number_matches, data_count FROM connections.public.league_seasons WHERE league_id = $1 AND season_id = $2";
+    let query = "SELECT number_matches, data_count FROM pi_db.connections.league_seasons WHERE league_id = $1 AND season_id = $2";
     let rows = db_client.query(query, &[&league_id, &season_id])?;
 
     if let Some(row) = rows.first() {
@@ -91,7 +91,7 @@ fn persist_league_fixtures(
     let matches = fixture_data["data"].as_array().unwrap();
 
     db_client.execute(
-        "INSERT INTO league_seasons (league_id, league_name, season_id, number_matches) 
+        "INSERT INTO pi_db.connections.league_seasons (league_id, league_name, season_id, number_matches) 
          VALUES ($1, $2, $3, $4) ON CONFLICT (league_id, season_id) DO NOTHING",
         &[
             &league_id,
@@ -106,7 +106,7 @@ fn persist_league_fixtures(
         let parsed_date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")?;
 
         match db_client.execute(
-            "INSERT INTO matches (league_id, season_id, match_id, home_team_id, home_team_name, away_team_id, away_team_name, match_date, data_count)
+            "INSERT INTO pi_db.connections.matches (league_id, season_id, match_id, home_team_id, home_team_name, away_team_id, away_team_name, match_date, data_count)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT DO NOTHING",
             &[
                 &league_id,

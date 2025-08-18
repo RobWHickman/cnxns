@@ -48,8 +48,8 @@ pub fn get_match_stats(
 fn get_match_info(db_client: &mut PgClient) -> Result<Vec<MatchInfo>, Box<dyn std::error::Error>> {
     let rows: Vec<postgres::Row> = db_client.query(
         "SELECT match_id, home_team_id, home_team_name, away_team_id, away_team_name 
-        FROM matches 
-        WHERE match_id NOT IN (SELECT DISTINCT match_id FROM player_stats)",
+        FROM pi_db.connections.matches 
+        WHERE match_id NOT IN (SELECT DISTINCT match_id FROM pi_db.connections.player_stats)",
         &[],
     )?;
 
@@ -111,7 +111,7 @@ fn persist_player_data(
         .map(|s| s.to_string());
 
     db_client.execute(
-        "INSERT INTO players (player_id, full_name, nationality, current_club, active) 
+        "INSERT INTO pi_db.connections.players (player_id, full_name, nationality, current_club, active) 
          VALUES ($1, $2, $3, $4, $5) 
          ON CONFLICT (player_id) DO NOTHING",
         &[
@@ -161,7 +161,7 @@ fn persist_match_stats(
 
     for (variable, value) in stats {
         db_client.execute(
-            "INSERT INTO player_stats (match_id, team_id, player_id, variable, value) 
+            "INSERT INTO pi_db.connections.player_stats (match_id, team_id, player_id, variable, value) 
              VALUES ($1, $2, $3, $4, $5) 
              ON CONFLICT DO NOTHING",
             &[
