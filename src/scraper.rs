@@ -24,7 +24,7 @@ fn fill_db(config: toml::Value) -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    let database_url = env::var("PI_DB_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("PI_DB_LOCAL").expect("DATABASE_URL must be set");
     println!("Loaded string {:#?}", database_url);
     let mut db_client = PgClient::connect(&database_url, NoTls).unwrap();
     println!("connected");

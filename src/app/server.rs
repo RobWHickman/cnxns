@@ -26,7 +26,11 @@ struct SearchQuery {
 
 pub async fn run_server() {
     dotenv().ok();
-    let database_url = env::var("PI_DB_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("PI_DB_RENDER")
+    .or_else(|_| env::var("PI_DB_LOCAL"))
+    .expect("PI_DB_RENDER or PI_DB_LOCAL must be set");
+
+    println!("Using database URL: {}", database_url);
 
     let (client, connection) = tokio_postgres::connect(&database_url, NoTls).await.unwrap();
     tokio::spawn(async move {
@@ -46,10 +50,13 @@ pub async fn run_server() {
         .nest_service("/static", static_service)
         .with_state(client);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
+    let bind_address = format!("0.0.0.0:{}", port);
+
+    let listener = tokio::net::TcpListener::bind(&bind_address)
         .await
         .unwrap();
-    println!("Server running on http://127.0.0.1:3000");
+    println!("Server running on http://{}", bind_address);
     axum::serve(listener, app).await.unwrap();
 }
 
