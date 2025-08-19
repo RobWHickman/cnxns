@@ -4,7 +4,7 @@ use serde_json::Value;
 use std::thread::sleep;
 use std::{env, time::Duration};
 
-const PROBLEMATIC_MATCHES: &[&str] = &["19bad36c", "93a55635"];
+const PROBLEMATIC_MATCHES: &[&str] = &["19bad36c", "93a55635", "7110621d", "8d12dd69", "ff278feb"];
 
 struct MatchInfo {
     match_id: String,
