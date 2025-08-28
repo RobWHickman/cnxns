@@ -87,9 +87,11 @@ fn request_match_players(
 
     println!("Got response with status: {}", response.status());
     if !response.status().is_success() {
-        return Err(format!("API request failed with status: {}", response.status()).into());
+        let status = response.status();
+        let error_body = response.text().unwrap_or_else(|_| "Could not read error body".to_string());
+        println!("API Error Body: {}", error_body);
+        return Err(format!("API request failed with status: {} - Body: {}", status, error_body).into());
     }
-
     println!("Parsing JSON response...");
     let json: Value = response.json()?;
     println!("Successfully parsed JSON for match: {}", match_id);

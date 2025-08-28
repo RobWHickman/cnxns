@@ -26,9 +26,8 @@ struct SearchQuery {
 
 pub async fn run_server() {
     dotenv().ok();
-    let database_url = env::var("PI_DB_RENDER")
-    .or_else(|_| env::var("PI_DB_LOCAL"))
-    .expect("PI_DB_RENDER or PI_DB_LOCAL must be set");
+    let database_url = env::var("PI_DB_LOCAL")
+        .expect("PI_DB_LOCAL must be set");
 
     println!("Using database URL: {}", database_url);
 
