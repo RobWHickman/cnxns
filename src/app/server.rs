@@ -163,7 +163,7 @@ async fn remove_player_handler(
     Json(ConnectionResponse {
         success: true,
         shared_matches: None,
-        team_id: None,
+        team: None,
         updated_chain: Some(updated_chain.clone()),
         is_complete: Some(is_complete),
         chain_length: Some(updated_chain.len()),

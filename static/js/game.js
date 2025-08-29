@@ -59,12 +59,12 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
     .then(response => response.json())
     .then(data => {
         console.log('Connection response:', data);
-        
+
         if (!data.success) {
             alert('No shared matches!');
         } else {
-            console.log('About to lock in player');
-            lockInPlayer(selectedPlayerId, inputElement, data.shared_matches);
+            console.log(`Connection found: ${data.shared_matches} ${data.team.color_circles}`);
+            lockInPlayer(selectedPlayerId, inputElement, data.shared_matches, data.team.color_circles);
             
             if (data.is_complete) {
                 completeGame(data.chain_length);
@@ -74,12 +74,14 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
     .catch(error => console.error('Connection check error:', error));
 }
 
-function lockInPlayer(playerId, inputElement, matchCount) {
+function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
+    console.log('lockInPlayer called with:', { playerId, matchCount, colorCircles });
+
     playerChain.push(playerId);
     
-    if (matchCount) {
+    if (matchCount && colorCircles) {
         const playerName = inputElement.value;
-        inputElement.value = `${playerName} (${matchCount})`;
+        inputElement.value = `${playerName} (${matchCount} ${colorCircles})`;
     }
 
     inputElement.disabled = true;
@@ -140,7 +142,7 @@ function removeLastPlayer() {
                 lastInput.disabled = false;
                 lastInput.style.backgroundColor = '';
                 const currentValue = lastInput.value;
-                lastInput.value = currentValue.replace(/ \(\d+\)$/, '');
+                lastInput.value = currentValue.replace(/ \(\d+ .+\)$/, '');
             }
             
             document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());

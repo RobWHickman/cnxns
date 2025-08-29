@@ -1,5 +1,5 @@
 use crate::app::connection_types::PlayerConnection;
-use crate::app::entity_types::{DailyChallenge, Player};
+use crate::app::entity_types::{DailyChallenge, Player, Team};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
 use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
@@ -88,18 +88,25 @@ pub async fn check_player_connection(
     }
 
     let shared_matches: i64 = rows[0].get("shared_matches");
-    let team_id: String = rows[0].get("team_id");
+
+    let team: Team = Team::new(
+        rows[0].get("team_id"),
+        rows[0].get("team_name"),
+        rows[0].get("colour1"),
+        rows[0].get("colour2"),
+    );
 
     println!(
-        "Found {} shared matches between {} and {} on team {}",
-        shared_matches, &player1_id, &player2_id, team_id
+        "Found {} shared matches between {} and {} on team {} {}",
+        shared_matches, &player1_id, &player2_id, team.team_id, team.color_circles
     );
+
 
     Ok(Some(PlayerConnection {
         player1_id: player1_id,
         player2_id: player2_id,
         matches_together: shared_matches as i32,
-        team_id,
+        team,
     }))
 }
 

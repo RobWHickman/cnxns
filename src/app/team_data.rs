@@ -37,3 +37,24 @@ fn parse_team_colors(
 
     Ok(color_map)
 }
+
+pub fn colors_to_emoji(colour1: &Option<String>, colour2: &Option<String>) -> String {
+    let emoji1 = color_to_circle(colour1);
+    let emoji2 = color_to_circle(colour2);
+    format!("{}{}", emoji1, emoji2)
+}
+
+fn color_to_circle(color: &Option<String>) -> &'static str {
+    match color.as_ref().map(|s| s.as_str()) {
+        Some("red") => "🔴",
+        Some("blue") => "🔵",
+        Some("green") => "🟢",
+        Some("yellow") => "🟡",
+        Some("purple") => "🟣",
+        Some("orange") => "🟠",
+        Some("brown") => "🟤",
+        Some("black") => "⚫",
+        Some("white") => "⚪",
+        _ => "⭕",
+    }
+}
