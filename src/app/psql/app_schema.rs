@@ -1,5 +1,5 @@
 pub const CREATE_DAILY_SELECTION_TABLE: &str = r#"
-CREATE TABLE IF NOT EXISTS connections.daily_selection (
+CREATE TABLE IF NOT EXISTS public.daily_selection (
    date DATE PRIMARY KEY,
    player1_id VARCHAR(80),
    player1_full_name VARCHAR(255),
@@ -8,23 +8,23 @@ CREATE TABLE IF NOT EXISTS connections.daily_selection (
    optimal_distance INT DEFAULT 0,
    created_at_utc TIMESTAMP DEFAULT NOW(),
    updated_at_utc TIMESTAMP DEFAULT NOW(),
-   FOREIGN KEY (player1_id) REFERENCES connections.players(player_id),
-   FOREIGN KEY (player2_id) REFERENCES connections.players(player_id),
+   FOREIGN KEY (player1_id) REFERENCES public.players(player_id),
+   FOREIGN KEY (player2_id) REFERENCES public.players(player_id),
    CONSTRAINT different_players CHECK (player1_id != player2_id)
 );
 "#;
 
 pub const GENERATE_DAILY_SELECTION: &str = r#"
 WITH used_players AS (
-    SELECT player1_id AS player_id FROM connections.daily_selection
+    SELECT player1_id AS player_id FROM public.daily_selection
     UNION
-    SELECT player2_id AS player_id FROM connections.daily_selection
+    SELECT player2_id AS player_id FROM public.daily_selection
 ),
 possible_players AS (
     SELECT p.player_id, p.full_name, COUNT(DISTINCT m.match_id) AS n
-    FROM connections.players p 
-    JOIN connections.player_stats ps ON ps.player_id = p.player_id
-    JOIN connections.matches m ON ps.match_id = m.match_id
+    FROM public.players p 
+    JOIN public.player_stats ps ON ps.player_id = p.player_id
+    JOIN public.matches m ON ps.match_id = m.match_id
     WHERE ps.variable = 'mins_played'
       AND m.league_id = '9'
       AND p.player_id NOT IN (SELECT player_id FROM used_players)
@@ -44,13 +44,50 @@ selected_players AS (
     FROM random_pair
     WHERE rn <= 2
 )
-INSERT INTO connections.daily_selection (date, player1_id, player1_full_name, player2_id, player2_full_name)
+INSERT INTO public.daily_selection (date, player1_id, player1_full_name, player2_id, player2_full_name)
 SELECT CURRENT_DATE, player1_id, player1_full_name, player2_id, player2_full_name
 FROM selected_players
 WHERE NOT EXISTS (
-    SELECT 1 FROM connections.daily_selection 
+    SELECT 1 FROM public.daily_selection 
     WHERE date = CURRENT_DATE
 )
 AND player1_id IS NOT NULL 
 AND player2_id IS NOT NULL;
+"#;
+
+pub const CREATE_TEAMS_TABLE: &str = r#"
+CREATE TABLE IF NOT EXISTS public.teams (
+    team_id VARCHAR(80) PRIMARY KEY,
+    team_name VARCHAR(255),
+    common_name VARCHAR(255),
+    colour1 VARCHAR(50) CHECK (colour1 IN ('red', 'blue', 'green', 'yellow', 'purple', 'orange', 'brown', 'black', 'white') OR colour1 IS NULL),
+    colour2 VARCHAR(50) CHECK (colour2 IN ('red', 'blue', 'green', 'yellow', 'purple', 'orange', 'brown', 'black', 'white') OR colour2 IS NULL),
+    created_at_utc TIMESTAMP DEFAULT NOW(),
+    updated_at_utc TIMESTAMP DEFAULT NOW()
+);
+"#;
+
+pub const REFRESH_TEAMS_TABLE: &str = r#"
+INSERT INTO public.teams (team_id, team_name, common_name, colour1, colour2)
+WITH all_teams AS (
+    SELECT DISTINCT home_team_id as team_id, home_team_name as team_name FROM public.matches
+    UNION
+    SELECT DISTINCT away_team_id as team_id, away_team_name as team_name FROM public.matches
+),
+first_teams AS (
+    SELECT team_id, MIN(team_name) as team_name
+    FROM all_teams
+    GROUP BY team_id
+)
+SELECT team_id, team_name, NULL, NULL, NULL
+FROM first_teams
+ON CONFLICT (team_id) DO UPDATE SET
+    team_name = EXCLUDED.team_name,
+    updated_at_utc = NOW();
+"#;
+
+pub const UPDATE_TEAM_COLORS: &str = r#"
+UPDATE public.teams 
+SET colour1 = $1, colour2 = $2, updated_at_utc = NOW() 
+WHERE team_id = $3
 "#;

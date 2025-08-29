@@ -26,8 +26,7 @@ struct SearchQuery {
 
 pub async fn run_server() {
     dotenv().ok();
-    let database_url = env::var("PI_DB_LOCAL")
-        .expect("PI_DB_LOCAL must be set");
+    let database_url = env::var("PI_DB_LOCAL").expect("PI_DB_LOCAL must be set");
 
     println!("Using database URL: {}", database_url);
 
@@ -52,9 +51,7 @@ pub async fn run_server() {
     let port = env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let bind_address = format!("0.0.0.0:{}", port);
 
-    let listener = tokio::net::TcpListener::bind(&bind_address)
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind(&bind_address).await.unwrap();
     println!("Server running on http://{}", bind_address);
     axum::serve(listener, app).await.unwrap();
 }

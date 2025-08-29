@@ -48,8 +48,8 @@ pub fn get_match_stats(
 fn get_match_info(db_client: &mut PgClient) -> Result<Vec<MatchInfo>, Box<dyn std::error::Error>> {
     let rows: Vec<postgres::Row> = db_client.query(
         "SELECT match_id, home_team_id, home_team_name, away_team_id, away_team_name 
-        FROM pi_db.connections.matches 
-        WHERE match_id NOT IN (SELECT DISTINCT match_id FROM pi_db.connections.player_stats)",
+        FROM pi_db.public.matches 
+        WHERE match_id NOT IN (SELECT DISTINCT match_id FROM pi_db.public.player_stats)",
         &[],
     )?;
 
@@ -88,9 +88,15 @@ fn request_match_players(
     println!("Got response with status: {}", response.status());
     if !response.status().is_success() {
         let status = response.status();
-        let error_body = response.text().unwrap_or_else(|_| "Could not read error body".to_string());
+        let error_body = response
+            .text()
+            .unwrap_or_else(|_| "Could not read error body".to_string());
         println!("API Error Body: {}", error_body);
-        return Err(format!("API request failed with status: {} - Body: {}", status, error_body).into());
+        return Err(format!(
+            "API request failed with status: {} - Body: {}",
+            status, error_body
+        )
+        .into());
     }
     println!("Parsing JSON response...");
     let json: Value = response.json()?;
@@ -113,7 +119,7 @@ fn persist_player_data(
         .map(|s| s.to_string());
 
     db_client.execute(
-        "INSERT INTO pi_db.connections.players (player_id, full_name, nationality, current_club, active) 
+        "INSERT INTO pi_db.public.players (player_id, full_name, nationality, current_club, active) 
          VALUES ($1, $2, $3, $4, $5) 
          ON CONFLICT (player_id) DO NOTHING",
         &[
@@ -163,7 +169,7 @@ fn persist_match_stats(
 
     for (variable, value) in stats {
         db_client.execute(
-            "INSERT INTO pi_db.connections.player_stats (match_id, team_id, player_id, variable, value) 
+            "INSERT INTO pi_db.public.player_stats (match_id, team_id, player_id, variable, value) 
              VALUES ($1, $2, $3, $4, $5) 
              ON CONFLICT DO NOTHING",
             &[

@@ -13,7 +13,7 @@ function attachSearchListeners(input, dropdown) {
 
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            fetch(`/cnxns/api/search?q=${encodeURIComponent(query)}`)
+            fetch(`/api/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(players => {
                     dropdown.innerHTML = '';
@@ -48,7 +48,7 @@ function attachSearchListeners(input, dropdown) {
 function checkPlayerConnection(selectedPlayerId, inputElement) {
     console.log('Checking connection for:', selectedPlayerId);
     
-    fetch('/cnxns/api/check-connection', {
+    fetch('/api/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -64,7 +64,7 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
             alert('No shared matches!');
         } else {
             console.log('About to lock in player');
-            lockInPlayer(selectedPlayerId, inputElement);
+            lockInPlayer(selectedPlayerId, inputElement, data.shared_matches);
             
             if (data.is_complete) {
                 completeGame(data.chain_length);
@@ -74,9 +74,14 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
     .catch(error => console.error('Connection check error:', error));
 }
 
-function lockInPlayer(playerId, inputElement) {
+function lockInPlayer(playerId, inputElement, matchCount) {
     playerChain.push(playerId);
     
+    if (matchCount) {
+        const playerName = inputElement.value;
+        inputElement.value = `${playerName} (${matchCount})`;
+    }
+
     inputElement.disabled = true;
     inputElement.style.backgroundColor = '#e9e9e9';
     
@@ -113,7 +118,7 @@ function lockInPlayer(playerId, inputElement) {
 function removeLastPlayer() {
     if (playerChain.length <= 1) return;
     
-    fetch('/cnxns/api/remove-player', {
+    fetch('/api/remove-player', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerChain)
@@ -134,7 +139,8 @@ function removeLastPlayer() {
             if (lastInput && lastInput.disabled) {
                 lastInput.disabled = false;
                 lastInput.style.backgroundColor = '';
-                lastInput.value = '';
+                const currentValue = lastInput.value;
+                lastInput.value = currentValue.replace(/ \(\d+\)$/, '');
             }
             
             document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());

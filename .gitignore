@@ -27,3 +27,5 @@ target
 
 .env
 .pi-readme
+
+.DS_Store
