@@ -1,5 +1,5 @@
 pub const CREATE_TABLES_SQL: &str = r#"
-CREATE TABLE IF NOT EXISTS public.league_seasons (
+CREATE TABLE IF NOT EXISTS pib_db.connections.league_seasons (
    league_id VARCHAR(10),
    league_name VARCHAR(255),
    season_id VARCHAR(50),
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS public.league_seasons (
    PRIMARY KEY (league_id, season_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.matches (
+CREATE TABLE IF NOT EXISTS pib_db.connections.matches (
    league_id VARCHAR(10),
    season_id VARCHAR(50),
    match_id VARCHAR(80),
@@ -23,10 +23,10 @@ CREATE TABLE IF NOT EXISTS public.matches (
    created_at_utc TIMESTAMP DEFAULT NOW(),
    updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (league_id, season_id, match_id),
-   FOREIGN KEY (league_id, season_id) REFERENCES public.league_seasons(league_id, season_id)
+   FOREIGN KEY (league_id, season_id) REFERENCES pib_db.connections.league_seasons(league_id, season_id)
 );
 
-CREATE TABLE IF NOT EXISTS public.players (
+CREATE TABLE IF NOT EXISTS pib_db.connections.players (
    player_id VARCHAR(80) PRIMARY KEY,
    full_name VARCHAR(255),
    nationality VARCHAR(10),
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS public.players (
    updated_at_utc TIMESTAMP DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS public.player_stats (
+CREATE TABLE IF NOT EXISTS pib_db.connections.player_stats (
    match_id VARCHAR(80),
    team_id VARCHAR(80),
    player_id VARCHAR(80),
@@ -45,13 +45,13 @@ CREATE TABLE IF NOT EXISTS public.player_stats (
    created_at_utc TIMESTAMP DEFAULT NOW(),
    updated_at_utc TIMESTAMP DEFAULT NOW(),
    PRIMARY KEY (match_id, team_id, player_id, variable),
-   FOREIGN KEY (player_id) REFERENCES public.players(player_id)
+   FOREIGN KEY (player_id) REFERENCES pib_db.connections.players(player_id)
 );
 
-CREATE OR REPLACE VIEW public.teams AS
+CREATE OR REPLACE VIEW pib_db.connections.teams AS
 SELECT DISTINCT home_team_id as team_id, home_team_name as team_name 
-FROM public.matches
+FROM pib_db.connections.matches
 UNION
 SELECT DISTINCT away_team_id as team_id, away_team_name as team_name 
-FROM public.matches;
+FROM pib_db.connections.matches;
 "#;

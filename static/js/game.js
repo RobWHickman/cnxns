@@ -31,7 +31,7 @@ function attachSearchListeners(input, dropdown) {
 
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            fetch(`/api/search?q=${encodeURIComponent(query)}`)
+            fetch(`/cnxns/api/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(players => {
                     dropdown.innerHTML = '';
@@ -66,7 +66,7 @@ function attachSearchListeners(input, dropdown) {
 function checkPlayerConnection(selectedPlayerId, inputElement) {
     console.log('Checking connection for:', selectedPlayerId);
     
-    fetch('/api/check-connection', {
+    fetch('/cnxns/api/check-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -144,7 +144,7 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
 function removeLastPlayer() {
     if (playerChain.length <= 1) return;
     
-    fetch('/api/remove-player', {
+    fetch('/cnxns/api/remove-player', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerChain)

@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Tifo Podcast Football Connections Game</title>
-    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/cnxns/static/css/styles.css">
 </head>
 <body>
     <h1 style="text-align: center;">Tifo Podcast Football Connections Game</h1>
@@ -30,17 +30,17 @@
 
     <!-- Footer images and stripes -->
     <div class="corner-images">
-        <img src="/static/img/tifo.png" alt="Tifo" class="corner-img left">
-        <img src="/static/img/fbref.svg" alt="FBRef" class="corner-img right">
+        <img src="/cnxns/static/img/tifo.png" alt="Tifo" class="corner-img left">
+        <img src="/cnxns/static/img/fbref.svg" alt="FBRef" class="corner-img right">
     </div>
     
     <div class="bottom-stripes">
         <div class="stripe"></div>
         <div class="stripe"></div>
     </div>
-    <script src="/static/js/game.js"></script>
+    <script src="/cnxns/static/js/game.js"></script>
     <script>
-        fetch('/static/html/instructions.html')
+        fetch('/cnxns/static/html/instructions.html')
             .then(response => response.text())
             .then(html => {
                 document.getElementById('instructions-container').innerHTML = html;
