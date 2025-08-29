@@ -1,5 +1,23 @@
 let playerChain = [document.querySelector('.game-container').dataset.player1Id];
 
+function updateFooterPosition() {
+    const gameContainer = document.querySelector('.game-container');
+    const instructionsContainer = document.querySelector('.instructions');
+    
+    const gameBottom = gameContainer.offsetTop + gameContainer.offsetHeight;
+    const instructionsBottom = instructionsContainer.offsetTop + instructionsContainer.offsetHeight;
+    const containerBottom = Math.max(gameBottom, instructionsBottom);
+    
+    const cornerImages = document.querySelector('.corner-images');
+    const bottomStripes = document.querySelector('.bottom-stripes');
+    
+    const imagePosition = containerBottom + 30;
+    const stripePosition = imagePosition + 120; // Fixed 120px gap between images and stripes
+    
+    cornerImages.style.top = Math.min(imagePosition, window.innerHeight - 180) + 'px';
+    bottomStripes.style.top = Math.min(stripePosition, window.innerHeight - 70) + 'px';
+}
+
 function attachSearchListeners(input, dropdown) {
     let searchTimeout;
     
@@ -67,7 +85,12 @@ function checkPlayerConnection(selectedPlayerId, inputElement) {
             lockInPlayer(selectedPlayerId, inputElement, data.shared_matches, data.team.color_circles);
             
             if (data.is_complete) {
-                completeGame(data.chain_length);
+                const finalConnectionData = data.final_connection ? {
+                    shared_matches: data.final_connection[0],
+                    team: { color_circles: data.final_connection[1].color_circles }
+                } : null;
+                
+                completeGame(data.chain_length, finalConnectionData);
             }
         }
     })
@@ -93,7 +116,6 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
         removeBtn.innerHTML = '×';
         removeBtn.onclick = removeLastPlayer;
         inputElement.parentElement.appendChild(removeBtn);
-        console.log('Added remove button:', removeBtn); 
     }
     
     document.querySelectorAll('.remove-btn').forEach((btn, index) => {
@@ -115,6 +137,8 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
     const newInput = newInputContainer.querySelector('.connection-input');
     const newDropdown = newInputContainer.querySelector('.autocomplete-dropdown');
     attachSearchListeners(newInput, newDropdown);
+    
+    updateFooterPosition();
 }
 
 function removeLastPlayer() {
@@ -158,13 +182,25 @@ function removeLastPlayer() {
                     lastLockedInput.parentElement.appendChild(removeBtn);
                 }
             }
+            
+            updateFooterPosition();
         }
     })
     .catch(error => console.error('Remove error:', error));
 }
 
-function completeGame(chainLength) {
+function completeGame(chainLength, finalConnection) {
     const score = chainLength - 1;
+
+    if (finalConnection && finalConnection.shared_matches && finalConnection.team) {
+        const playerBoxes = document.querySelectorAll('.player-box');
+        const lastPlayerBox = playerBoxes[playerBoxes.length - 1];
+        
+        if (lastPlayerBox) {
+            const currentText = lastPlayerBox.querySelector('h3').textContent;
+            lastPlayerBox.querySelector('h3').textContent = `${currentText} (${finalConnection.shared_matches} ${finalConnection.team.color_circles})`;
+        }
+    }
 
     const lastInput = document.querySelector('.connection-input:not(:disabled)');
     if (lastInput) {
@@ -181,8 +217,11 @@ function completeGame(chainLength) {
             <p>You connected the players in ${score} steps!</p>
         </div>
     `;
-    
+
     gameContainer.appendChild(completionDiv);
+    setTimeout(() => {
+        updateFooterPosition();
+    }, 100);
 }
 
 const initialInput = document.getElementById('player-search');
@@ -198,3 +237,5 @@ document.addEventListener('click', function(e) {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', updateFooterPosition);

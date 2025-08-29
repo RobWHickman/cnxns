@@ -5,23 +5,27 @@
     <link rel="stylesheet" href="/static/css/styles.css">
 </head>
 <body>
-    <div class="game-container" data-player1-id="{{player1_id}}">
-        <h1>Tifo Podcast Football Connections Game</h1>
+    <h1 style="text-align: center;">Tifo Podcast Football Connections Game</h1>
+    
+    <div class="main-container">
+        <div id="instructions-container"></div>
         
-        <div class="player-box">
-            <h3>{{player1_name}}</h3>
+        <div class="game-container" data-player1-id="{{player1_id}}">
+            <div class="player-box">
+                <h3>{{player1_name}}</h3>
+            </div>
+            
+            <div class="input-container">
+                <input type="text" id="player-search" class="connection-input" placeholder="Add a connecting player...">
+                <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
+            </div>
+            
+            <div class="player-box">
+                <h3>{{player2_name}}</h3>
+            </div>
+            
+            <p>Connect these players through their teammates!</p>
         </div>
-        
-        <div class="input-container">
-            <input type="text" id="player-search" class="connection-input" placeholder="Add a connecting player...">
-            <div id="autocomplete-dropdown" class="autocomplete-dropdown"></div>
-        </div>
-        
-        <div class="player-box">
-            <h3>{{player2_name}}</h3>
-        </div>
-        
-        <p>Connect these players through their teammates!</p>
     </div>
 
     <!-- Footer images and stripes -->
@@ -34,7 +38,13 @@
         <div class="stripe"></div>
         <div class="stripe"></div>
     </div>
-
     <script src="/static/js/game.js"></script>
+    <script>
+        fetch('/static/html/instructions.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('instructions-container').innerHTML = html;
+            });
+    </script>
 </body>
 </html>

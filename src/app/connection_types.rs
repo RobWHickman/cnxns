@@ -24,6 +24,7 @@ pub struct ConnectionResponse {
     pub is_complete: Option<bool>,
     pub chain_length: Option<usize>,
     pub message: Option<String>,
+    pub final_connection: Option<(i32, Team)>,
 }
 
 impl ConnectionResponse {
@@ -31,6 +32,7 @@ impl ConnectionResponse {
         player_connection: PlayerConnection,
         updated_chain: Vec<String>,
         is_complete: bool,
+        final_connection: Option<(i32, Team)>,
     ) -> Self {
         let chain_length = updated_chain.len();
         ConnectionResponse {
@@ -41,6 +43,7 @@ impl ConnectionResponse {
             is_complete: Some(is_complete),
             chain_length: Some(chain_length),
             message: None,
+            final_connection
         }
     }
 
@@ -53,6 +56,7 @@ impl ConnectionResponse {
             updated_chain: None,
             is_complete: None,
             chain_length: None,
+            final_connection: None
         }
     }
 }

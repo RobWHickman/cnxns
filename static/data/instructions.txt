@@ -1,0 +1,13 @@
+Make connections between players who have played in the same football team.
+
+Enter a player's name who you think has played with the player above. If succesful will be locked in and return the number of shared league matches played.
+
+For instance Michael Owen -> Steven Gerrard will return (175 🔴🔴)
+
+The brackets lists the number of matches shared, and the team colours for the team where both players shared the most matches.
+
+For instance Rio Ferdinand -> Alan Smith will return (50 🔴⚫) from Manchester United (and not the shared matches from Leeds United).
+
+The full list of leagues currently included in the database:
+Premier League: 1992-2025
+La Liga: 1992-1997

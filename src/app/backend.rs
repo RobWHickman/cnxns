@@ -101,7 +101,6 @@ pub async fn check_player_connection(
         shared_matches, &player1_id, &player2_id, team.team_id, team.color_circles
     );
 
-
     Ok(Some(PlayerConnection {
         player1_id: player1_id,
         player2_id: player2_id,
