@@ -31,9 +31,9 @@ with player_matches as (
     group by team_name
 )
 select 
-    left(start_season, 4) || '-' || right(end_season, 4) as season_range,
-    team_name,
-    total_matches
+    team_name as team,
+    left(start_season, 4) || '-' || right(end_season, 4) as seasons,
+    total_matches as league_matches
 from team_summary
 order by start_season, team_name
 "#;
