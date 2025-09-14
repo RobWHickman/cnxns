@@ -1,5 +1,6 @@
 let playerChain = [document.querySelector('.game-container').dataset.player1Id];
 const API_PREFIX = window.location.pathname.includes('/cnxns') ? '/cnxns' : '';
+let connectionData = []; 
 
 if (!document.getElementById('career-modal')) {
     document.body.insertAdjacentHTML('beforeend', `
@@ -126,6 +127,10 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
     if (matchCount && colorCircles) {
         const playerName = inputElement.value;
         inputElement.value = `${playerName} (${matchCount} ${colorCircles})`;
+        connectionData.push({
+            matches: matchCount,
+            colorCircles: colorCircles
+        });
     }
 
     inputElement.disabled = true;
@@ -185,6 +190,7 @@ function removeLastPlayer() {
     .then(data => {
         if (data.success) {
             playerChain = data.updated_chain;
+            connectionData.pop();
             
             const containers = document.querySelectorAll('.input-container');
             const lastContainer = containers[containers.length - 1];
@@ -245,6 +251,11 @@ function completeGame(chainLength, finalConnection) {
         }
     }
 
+    connectionData.push({
+        matches: finalConnection.shared_matches,
+        colorCircles: finalConnection.team.color_circles
+    });
+
     const lastInput = document.querySelector('.connection-input:not(:disabled)');
     if (lastInput) {
         lastInput.parentElement.remove();
@@ -259,6 +270,7 @@ function completeGame(chainLength, finalConnection) {
         <div style="background: #4CAF50; color: white; padding: 20px; border-radius: 12px; text-align: center; margin: 20px 0;">
             <h2>🎉 Completed!</h2>
             <p>You connected the players in ${score} steps!</p>
+            <button onclick="copyResult()" style="background: white; color: #4CAF50; border: none; padding: 10px 20px; border-radius: 8px; margin-top: 10px; cursor: pointer; font-weight: bold;">📋 Copy Result</button>
         </div>
     `;
 
@@ -266,6 +278,46 @@ function completeGame(chainLength, finalConnection) {
     setTimeout(() => {
         updateFooterPosition();
     }, 100);
+}
+
+function copyResult() {
+    const playerBoxes = document.querySelectorAll('.player-box h3');
+    const startPlayer = playerBoxes[0].textContent.replace(/ \(\d+ .+\)$/, '');
+    const endPlayer = playerBoxes[1].textContent.replace(/ \(\d+ .+\)$/, '');
+    
+    let result = startPlayer + '\n';
+    connectionData.forEach(conn => {
+        result += `${conn.colorCircles} (${conn.matches})\n`;
+    });
+    result += endPlayer;
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(result).then(() => {
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = '✅ Copied!';
+            setTimeout(() => button.textContent = originalText, 2000);
+        }).catch(() => {
+            fallbackCopy(result);
+        });
+    } else {
+        fallbackCopy(result);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = '✅ Copied!';
+    setTimeout(() => button.textContent = originalText, 2000);
 }
 
 function showCareerModal(playerId, playerName) {
