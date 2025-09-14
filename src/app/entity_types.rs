@@ -1,5 +1,5 @@
-use serde::Serialize;
 use crate::app::team_data::colors_to_emoji;
+use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Player {
@@ -24,7 +24,12 @@ pub struct DailyChallenge {
 }
 
 impl Team {
-    pub fn new(team_id: String, team_name: String, colour1: Option<String>, colour2: Option<String>) -> Self {
+    pub fn new(
+        team_id: String,
+        team_name: String,
+        colour1: Option<String>,
+        colour2: Option<String>,
+    ) -> Self {
         let color_circles = colors_to_emoji(&colour1, &colour2);
         Team {
             team_id,

@@ -11,8 +11,7 @@ pub fn refresh_teams_table(db_client: &mut PgClient) -> Result<(), Box<dyn std::
     let color_map = parse_team_colors("static/data/team_colours.csv")?;
 
     for (team_id, (colour1, colour2)) in color_map {
-        db_client.execute(UPDATE_TEAM_COLORS,&[&colour1, &colour2, &team_id],
-        )?;
+        db_client.execute(UPDATE_TEAM_COLORS, &[&colour1, &colour2, &team_id])?;
     }
 
     Ok(())

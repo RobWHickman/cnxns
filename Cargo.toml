@@ -8,8 +8,12 @@ name = "server"
 path = "src/server.rs"
 
 [[bin]]
-name = "scraper"
-path = "src/scraper.rs"
+name = "fbref_scraper"
+path = "src/fbref_scraper.rs"
+
+[[bin]]
+name = "api_scraper"
+path = "src/api_scraper.rs"
 
 [[bin]]
 name = "daily"

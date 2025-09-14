@@ -26,7 +26,11 @@ struct SearchQuery {
 
 pub async fn run_server() {
     dotenv().ok();
-    let database_url = env::var("PI_DB_LOCAL").expect("PI_DB_LOCAL must be set");
+    let database_url = if env::var("DEPLOYMENT").unwrap_or_default() == "local" {
+        env::var("LOCALHOST_DB_STRING").expect("LOCALHOST_DB_STRING must be set")
+    } else {
+        env::var("PI_DB_STRING").expect("PI_DB_STRING must be set")
+    };
 
     println!("Using database URL: {}", database_url);
 
@@ -124,18 +128,33 @@ async fn connection_handler(
     let is_complete: bool = match check_game_completion(client.as_ref(), &new_player_id).await {
         Ok(complete) => complete,
         Err(e) => {
-            println!("Error checking game completion for {:?}: {}", new_player_id, e);
-            return Json(ConnectionResponse::failure("Unable to check game completion"));
+            println!(
+                "Error checking game completion for {:?}: {}",
+                new_player_id, e
+            );
+            return Json(ConnectionResponse::failure(
+                "Unable to check game completion",
+            ));
         }
     };
 
     let final_connection_data = if is_complete {
         let starting_state = match get_challenge_players(&client).await {
             Ok(challenge) => challenge,
-            Err(_) => return Json(ConnectionResponse::failure("Unable to get challenge players")),
+            Err(_) => {
+                return Json(ConnectionResponse::failure(
+                    "Unable to get challenge players",
+                ))
+            }
         };
-        
-        match check_player_connection(&client, new_player_id.clone(), starting_state.player2.player_id).await {
+
+        match check_player_connection(
+            &client,
+            new_player_id.clone(),
+            starting_state.player2.player_id,
+        )
+        .await
+        {
             Ok(Some(final_conn)) => Some((final_conn.matches_together, final_conn.team)),
             _ => None,
         }
@@ -147,7 +166,7 @@ async fn connection_handler(
         connection,
         updated_chain,
         is_complete,
-        final_connection_data
+        final_connection_data,
     ))
 }
 
@@ -178,6 +197,6 @@ async fn remove_player_handler(
         is_complete: Some(is_complete),
         chain_length: Some(updated_chain.len()),
         message: None,
-        final_connection: None
+        final_connection: None,
     })
 }

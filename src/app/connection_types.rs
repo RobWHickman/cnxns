@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::app::entity_types::Team;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ConnectionRequest {
@@ -43,7 +43,7 @@ impl ConnectionResponse {
             is_complete: Some(is_complete),
             chain_length: Some(chain_length),
             message: None,
-            final_connection
+            final_connection,
         }
     }
 
@@ -56,7 +56,7 @@ impl ConnectionResponse {
             updated_chain: None,
             is_complete: None,
             chain_length: None,
-            final_connection: None
+            final_connection: None,
         }
     }
 }

@@ -7,7 +7,11 @@ use std::env;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
-    let database_url = env::var("PI_DB_LOCAL").expect("DATABASE_URL must be set");
+    let database_url = if env::var("DEPLOYMENT").unwrap_or_default() == "local" {
+        env::var("LOCALHOST_DB_STRING").expect("LOCALHOST_DB_STRING must be set")
+    } else {
+        env::var("PI_DB_STRING").expect("PI_DB_STRING must be set")
+    };
     let mut db_client = PgClient::connect(&database_url, NoTls).unwrap();
 
     println!("Refreshing teams table...");

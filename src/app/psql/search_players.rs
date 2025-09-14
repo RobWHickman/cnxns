@@ -1,6 +1,6 @@
 pub const SEARCH_PLAYERS_BY_NAME: &str = r#"
     SELECT DISTINCT player_id, full_name 
-    FROM pi_db.connections.players 
+    FROM connections.players 
     WHERE LOWER(full_name) LIKE $1 
     LIMIT 10
 "#;
