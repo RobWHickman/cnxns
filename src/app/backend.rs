@@ -2,7 +2,7 @@ use crate::app::connection_types::PlayerConnection;
 use crate::app::entity_types::{DailyChallenge, Player, Team};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
-use crate::app::psql::search_players::{SEARCH_PLAYERS_BY_NAME, GET_PLAYER_CAREER};
+use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
 use chrono::Local;
 use tokio_postgres::Client;
 
