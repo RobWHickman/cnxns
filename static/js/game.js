@@ -1,9 +1,25 @@
 let playerChain = [document.querySelector('.game-container').dataset.player1Id];
 const API_PREFIX = window.location.pathname.includes('/cnxns') ? '/cnxns' : '';
 
+if (!document.getElementById('career-modal')) {
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="career-modal" class="career-modal">
+            <div class="career-content">
+                <h3 id="career-player-name">Player Career</h3>
+                <div id="career-table"></div>
+                <button onclick="closeCareerModal()">Close</button>
+            </div>
+        </div>
+    `);
+}
+
 function updateFooterPosition() {
     const gameContainer = document.querySelector('.game-container');
     const instructionsContainer = document.querySelector('.instructions');
+    
+    if (!gameContainer || !instructionsContainer) {
+        return; // Exit if elements don't exist yet
+    }
     
     const gameBottom = gameContainer.offsetTop + gameContainer.offsetHeight;
     const instructionsBottom = instructionsContainer.offsetTop + instructionsContainer.offsetHeight;
@@ -12,8 +28,12 @@ function updateFooterPosition() {
     const cornerImages = document.querySelector('.corner-images');
     const bottomStripes = document.querySelector('.bottom-stripes');
     
+    if (!cornerImages || !bottomStripes) {
+        return; // Exit if footer elements don't exist yet
+    }
+    
     const imagePosition = containerBottom + 30;
-    const stripePosition = imagePosition + 120; // Fixed 120px gap between images and stripes
+    const stripePosition = imagePosition + 120;
     
     cornerImages.style.top = Math.min(imagePosition, window.innerHeight - 180) + 'px';
     bottomStripes.style.top = Math.min(stripePosition, window.innerHeight - 70) + 'px';
@@ -111,12 +131,23 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
     inputElement.disabled = true;
     inputElement.style.backgroundColor = '#e9e9e9';
     
+    const careerBtn = document.createElement('button');
+    careerBtn.className = 'career-btn';
+    careerBtn.innerHTML = 'ℹ';
+    careerBtn.onclick = () => {
+        const playerName = inputElement.value.replace(/ \(\d+ .+\)$/, '');
+        showCareerModal(playerId, playerName);
+    };
+
     if (playerChain.length > 1) {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'remove-btn';
         removeBtn.innerHTML = '×';
         removeBtn.onclick = removeLastPlayer;
         inputElement.parentElement.appendChild(removeBtn);
+        inputElement.parentElement.appendChild(careerBtn);
+    } else {
+        inputElement.parentElement.appendChild(careerBtn);
     }
     
     document.querySelectorAll('.remove-btn').forEach((btn, index) => {
@@ -171,6 +202,7 @@ function removeLastPlayer() {
             }
             
             document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());
+            document.querySelectorAll('.career-btn').forEach(btn => btn.remove());
             
             if (playerChain.length > 1) {
                 const lockedInputs = document.querySelectorAll('.connection-input:disabled');
@@ -181,6 +213,16 @@ function removeLastPlayer() {
                     removeBtn.innerHTML = '×';
                     removeBtn.onclick = removeLastPlayer;
                     lastLockedInput.parentElement.appendChild(removeBtn);
+                    
+                    const careerBtn = document.createElement('button');
+                    careerBtn.className = 'career-btn';
+                    careerBtn.innerHTML = 'ℹ';
+                    careerBtn.onclick = () => {
+                        const playerName = lastLockedInput.value.replace(/ \(\d+ .+\)$/, '');
+                        const playerId = playerChain[playerChain.length - 1];
+                        showCareerModal(playerId, playerName);
+                    };
+                    lastLockedInput.parentElement.appendChild(careerBtn);
                 }
             }
             
@@ -209,6 +251,7 @@ function completeGame(chainLength, finalConnection) {
     }
 
     document.querySelectorAll('.remove-btn').forEach(btn => btn.remove());
+    document.querySelectorAll('.career-btn').forEach(btn => btn.remove());
 
     const gameContainer = document.querySelector('.game-container');
     const completionDiv = document.createElement('div');
@@ -225,6 +268,38 @@ function completeGame(chainLength, finalConnection) {
     }, 100);
 }
 
+function showCareerModal(playerId, playerName) {
+    document.getElementById('career-player-name').textContent = `${playerName} Career`;
+    document.getElementById('career-table').innerHTML = 'Loading...';
+    document.getElementById('career-modal').style.display = 'block';
+    
+    fetch(`${API_PREFIX}/api/career?player_id=${playerId}`)
+        .then(response => response.json())
+        .then(career => {
+            let html = '<table><tr><th>Team</th><th>Seasons</th><th>Matches</th></tr>';
+            career.forEach(([team, seasons, matches]) => {
+                html += `<tr><td>${team}</td><td>${seasons}</td><td>${matches}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('career-table').innerHTML = html;
+        })
+        .catch(error => {
+            document.getElementById('career-table').innerHTML = 'Error loading career data';
+        });
+}
+
+function closeCareerModal() {
+    document.getElementById('career-modal').style.display = 'none';
+}
+
+function addCareerButtonToBox(playerBox, playerId, playerName) {
+    const careerBtn = document.createElement('button');
+    careerBtn.className = 'career-btn';
+    careerBtn.innerHTML = 'ℹ';
+    careerBtn.onclick = () => showCareerModal(playerId, playerName);
+    playerBox.appendChild(careerBtn);
+}
+
 const initialInput = document.getElementById('player-search');
 const initialDropdown = document.getElementById('autocomplete-dropdown');
 attachSearchListeners(initialInput, initialDropdown);
@@ -239,4 +314,24 @@ document.addEventListener('click', function(e) {
     });
 });
 
-document.addEventListener('DOMContentLoaded', updateFooterPosition);
+document.addEventListener('DOMContentLoaded', function() {
+    updateFooterPosition();
+    
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="career-modal" class="career-modal">
+            <div class="career-content">
+                <h3 id="career-player-name">Player Career</h3>
+                <div id="career-table"></div>
+                <button onclick="closeCareerModal()">Close</button>
+            </div>
+        </div>
+    `);
+
+    const playerBoxes = document.querySelectorAll('.player-box');
+    const gameContainer = document.querySelector('.game-container');
+    const player1Id = gameContainer.dataset.player1Id;
+    const player2Id = gameContainer.dataset.player2Id;
+    
+    addCareerButtonToBox(playerBoxes[0], player1Id, playerBoxes[0].querySelector('h3').textContent);
+    addCareerButtonToBox(playerBoxes[1], player2Id, playerBoxes[1].querySelector('h3').textContent);
+});

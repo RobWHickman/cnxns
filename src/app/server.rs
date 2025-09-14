@@ -1,5 +1,5 @@
 use crate::app::backend::{
-    check_game_completion, check_player_connection, get_challenge_players, search_players_by_name,
+    check_game_completion, check_player_connection, get_challenge_players, search_players_by_name, get_player_career
 };
 use crate::app::connection_types::{ConnectionRequest, ConnectionResponse};
 use crate::app::html::home_page;
@@ -49,6 +49,7 @@ pub async fn run_server() {
         .route("/api/search", get(search_handler))
         .route("/api/check-connection", post(connection_handler))
         .route("/api/remove-player", post(remove_player_handler))
+        .route("/api/career", get(career_handler))
         .nest_service("/static", static_service)
         .with_state(client);
 
@@ -199,4 +200,24 @@ async fn remove_player_handler(
         message: None,
         final_connection: None,
     })
+}
+
+async fn career_handler(
+    Query(params): Query<std::collections::HashMap<String, String>>,
+    State(client): State<Arc<Client>>,
+) -> Result<Json<Vec<(String, String, i32)>>, StatusCode> {
+    let player_id = match params.get("player_id") {
+        Some(id) => id,
+        None => return Err(StatusCode::BAD_REQUEST),
+    };
+
+    let career = match get_player_career(&client, player_id).await {
+        Ok(career) => career,
+        Err(e) => {
+            println!("Error getting player career: {}", e);
+            return Err(StatusCode::INTERNAL_SERVER_ERROR);
+        }
+    };
+    
+    Ok(Json(career))
 }

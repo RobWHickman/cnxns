@@ -6,34 +6,32 @@ pub const SEARCH_PLAYERS_BY_NAME: &str = r#"
 "#;
 
 pub const GET_PLAYER_CAREER: &str = r#"
-with player_matches as (
-    select distinct ps.team_id, ps.match_id
-    from connections.player_stats ps
-    where player_id = 'd2acfbec'
-), player_seasons as (
-    select 
+WITH player_matches AS (
+    SELECT DISTINCT ps.team_id, ps.match_id
+    FROM connections.player_stats ps
+    WHERE player_id = $1
+), player_seasons AS (
+    SELECT 
         m.season_id, 
         t.team_name,
-        count(distinct pm.match_id) as match_count
-    from player_matches pm
-    join connections.matches m
-        on m.match_id = pm.match_id
-    join connections.teams t
-        on t.team_id = pm.team_id
-    group by m.season_id, t.team_name
-), team_summary as (
-    select 
+        COUNT(DISTINCT pm.match_id) AS match_count
+    FROM player_matches pm
+    JOIN connections.matches m ON m.match_id = pm.match_id
+    JOIN connections.teams t ON t.team_id = pm.team_id
+    GROUP BY m.season_id, t.team_name
+), team_summary AS (
+    SELECT 
         team_name,
-        min(season_id) as start_season,
-        max(season_id) as end_season,
-        sum(match_count) as total_matches
-    from player_seasons
-    group by team_name
+        MIN(season_id) AS start_season,
+        MAX(season_id) AS end_season,
+        SUM(match_count)::INTEGER AS total_matches
+    FROM player_seasons
+    GROUP BY team_name
 )
-select 
-    team_name as team,
-    left(start_season, 4) || '-' || right(end_season, 4) as seasons,
-    total_matches as league_matches
-from team_summary
-order by start_season, team_name
+SELECT 
+    team_name AS team,
+    LEFT(start_season, 4) || '-' || RIGHT(end_season, 4) AS seasons,
+    total_matches AS league_matches
+FROM team_summary
+ORDER BY start_season, team_name
 "#;

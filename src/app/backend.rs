@@ -2,7 +2,7 @@ use crate::app::connection_types::PlayerConnection;
 use crate::app::entity_types::{DailyChallenge, Player, Team};
 use crate::app::psql::connections::CHECK_PLAYERS_CONNECTED;
 use crate::app::psql::daily_players::GET_DAILY_PLAYERS;
-use crate::app::psql::search_players::SEARCH_PLAYERS_BY_NAME;
+use crate::app::psql::search_players::{SEARCH_PLAYERS_BY_NAME, GET_PLAYER_CAREER};
 use chrono::Local;
 use tokio_postgres::Client;
 
@@ -124,4 +124,24 @@ pub async fn check_game_completion(
     .await?;
 
     Ok(completion_check.is_some())
+}
+
+pub async fn get_player_career(
+    client: &Client,
+    player_id: &str,
+) -> Result<Vec<(String, String, i32)>, Box<dyn std::error::Error>> {
+    let rows = client
+        .query(crate::app::psql::search_players::GET_PLAYER_CAREER, &[&player_id])
+        .await?;
+
+    let career: Vec<(String, String, i32)> = rows
+        .iter()
+        .map(|row| (
+            row.get("team"),
+            row.get("seasons"), 
+            row.get("league_matches")
+        ))
+        .collect();
+
+    Ok(career)
 }

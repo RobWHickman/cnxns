@@ -11,9 +11,10 @@ pub async fn home_page(daily_challenge: DailyChallenge) -> Html<String> {
         "/cnxns"
     };
 
-    let html = template
+    let html: String = template
         .replace("{{player1_id}}", &daily_challenge.player1.player_id)
         .replace("{{player1_name}}", &daily_challenge.player1.player_name)
+        .replace("{{player2_id}}", &daily_challenge.player2.player_id)
         .replace("{{player2_name}}", &daily_challenge.player2.player_name)
         .replace("{{api_prefix}}", api_prefix);
 
