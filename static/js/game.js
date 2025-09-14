@@ -1,4 +1,5 @@
 let playerChain = [document.querySelector('.game-container').dataset.player1Id];
+const API_PREFIX = window.location.pathname.includes('/cnxns') ? '/cnxns' : '';
 
 function updateFooterPosition() {
     const gameContainer = document.querySelector('.game-container');
@@ -31,7 +32,7 @@ function attachSearchListeners(input, dropdown) {
 
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
-            fetch(`{{api_prefix}}/api/search?q=${encodeURIComponent(query)}`)
+            fetch(`${API_PREFIX}/api/search?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(players => {
                     dropdown.innerHTML = '';
@@ -66,7 +67,7 @@ function attachSearchListeners(input, dropdown) {
 function checkPlayerConnection(selectedPlayerId, inputElement) {
     console.log('Checking connection for:', selectedPlayerId);
     
-    fetch('{{api_prefix}}/api/check-connection', {
+    fetch(`${API_PREFIX}/api/check-connection`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -144,7 +145,7 @@ function lockInPlayer(playerId, inputElement, matchCount, colorCircles) {
 function removeLastPlayer() {
     if (playerChain.length <= 1) return;
     
-    fetch('{{api_prefix}}/api/remove-player', {
+    fetch(`${API_PREFIX}/api/remove-player`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(playerChain)

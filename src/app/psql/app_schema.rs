@@ -29,7 +29,7 @@ possible_players AS (
       AND m.league_id = '9'
       AND p.player_id NOT IN (SELECT player_id FROM used_players)
     GROUP BY p.player_id, p.full_name
-    HAVING COUNT(DISTINCT m.match_id) > 30
+    HAVING COUNT(DISTINCT m.match_id) > 100
 ),
 random_pair AS (
     SELECT player_id, full_name, ROW_NUMBER() OVER (ORDER BY RANDOM()) as rn
@@ -45,11 +45,11 @@ selected_players AS (
     WHERE rn <= 2
 )
 INSERT INTO connections.daily_selection (date, player1_id, player1_full_name, player2_id, player2_full_name)
-SELECT CURRENT_DATE, player1_id, player1_full_name, player2_id, player2_full_name
+SELECT CURRENT_DATE + 1, player1_id, player1_full_name, player2_id, player2_full_name
 FROM selected_players
 WHERE NOT EXISTS (
     SELECT 1 FROM connections.daily_selection 
-    WHERE date = CURRENT_DATE
+    WHERE date = CURRENT_DATE + 1
 )
 AND player1_id IS NOT NULL 
 AND player2_id IS NOT NULL;
